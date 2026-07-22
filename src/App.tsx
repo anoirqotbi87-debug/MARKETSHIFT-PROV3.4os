@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { ViewMode, ThemeMode, MT5AccountState, ActivePosition, ClosedTrade, MLModelStats, RiskConfig, LogEntry } from './types';
 import { auth, db } from './firebase';
+import { isMockConfig } from './firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { LoginScreen } from './components/LoginScreen';
@@ -373,9 +374,10 @@ export default function App() {
 
 
   useEffect(() => {
+    if (isMockConfig || !auth) { setUser({ uid: 'mock-user-123', email: 'demo@example.com' } as User); setAuthLoading(false); return; }
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
-      if (currentUser) {
+      if (currentUser && db) {
         // Load data from Firestore
         const docRef = doc(db, 'users', currentUser.uid);
         const docSnap = await getDoc(docRef);
@@ -391,6 +393,7 @@ export default function App() {
 
   // Save risk config to firestore when it changes (debounce could be added, but simplistic for now)
   useEffect(() => {
+    if (isMockConfig || !db) return;
     if (user && !authLoading) {
       setDoc(doc(db, 'users', user.uid), { riskConfig }, { merge: true }).catch(console.error);
     }
