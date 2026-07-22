@@ -27,8 +27,10 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install Dependencies
-        run: npm install --force
+      - name: Install Dependencies (Linux Native)
+        run: |
+          rm -f package-lock.json
+          npm install --force
 
       - name: Build Web Assets (Vite)
         run: npx vite build
