@@ -98,13 +98,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     <div>
                       <label className="flex items-center justify-between text-sm text-slate-300 mb-1">
                         <span>Max Drawdown Journalier (%)</span>
-                        <span className="font-mono text-slate-100">{localRisk.maxDailyDrawdownPct}%</span>
+                        <span className="font-mono text-slate-100">{localRisk.maxDailyLossPct || 3}%</span>
                       </label>
                       <input 
                         type="range" 
                         min="1" max="20" step="0.5"
-                        value={localRisk.maxDailyDrawdownPct}
-                        onChange={(e) => setLocalRisk({...localRisk, maxDailyDrawdownPct: parseFloat(e.target.value)})}
+                        value={localRisk.maxDailyLossPct || 3}
+                        onChange={(e) => setLocalRisk({...localRisk, maxDailyLossPct: parseFloat(e.target.value)})}
                         className="w-full accent-red-500"
                       />
                     </div>
@@ -112,27 +112,27 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     <div>
                       <label className="flex items-center justify-between text-sm text-slate-300 mb-1">
                         <span>Perte Maximale par Trade (%)</span>
-                        <span className="font-mono text-slate-100">{localRisk.maxDrawdownPerTradePct}%</span>
+                        <span className="font-mono text-slate-100">{localRisk.maxRiskPerTradePct || 1}%</span>
                       </label>
                       <input 
                         type="range" 
                         min="0.5" max="10" step="0.1"
-                        value={localRisk.maxDrawdownPerTradePct}
-                        onChange={(e) => setLocalRisk({...localRisk, maxDrawdownPerTradePct: parseFloat(e.target.value)})}
+                        value={localRisk.maxRiskPerTradePct || 1}
+                        onChange={(e) => setLocalRisk({...localRisk, maxRiskPerTradePct: parseFloat(e.target.value)})}
                         className="w-full accent-orange-500"
                       />
                     </div>
 
                     <div>
                       <label className="flex items-center justify-between text-sm text-slate-300 mb-1">
-                        <span>Corrélation Maximale Autorisée</span>
-                        <span className="font-mono text-slate-100">{localRisk.maxCorrelationAllowed.toFixed(2)}</span>
+                        <span>Max Drawdown Total (%)</span>
+                        <span className="font-mono text-slate-100">{(localRisk.maxTotalDrawdownPct || 8).toFixed(2)}%</span>
                       </label>
                       <input 
                         type="range" 
-                        min="0.5" max="1" step="0.05"
-                        value={localRisk.maxCorrelationAllowed}
-                        onChange={(e) => setLocalRisk({...localRisk, maxCorrelationAllowed: parseFloat(e.target.value)})}
+                        min="1" max="50" step="1"
+                        value={localRisk.maxTotalDrawdownPct || 8}
+                        onChange={(e) => setLocalRisk({...localRisk, maxTotalDrawdownPct: parseFloat(e.target.value)})}
                         className="w-full accent-indigo-500"
                       />
                     </div>
