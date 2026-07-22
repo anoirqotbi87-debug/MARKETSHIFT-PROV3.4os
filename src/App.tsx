@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { ViewMode, ThemeMode, MT5AccountState, ActivePosition, ClosedTrade, MLModelStats, RiskConfig, LogEntry } from './types';
-import { auth, db } from './firebase';
-import { isMockConfig } from './firebase';
+import { auth, db, isMockConfig } from './firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { LoginScreen } from './components/LoginScreen';
@@ -110,6 +109,7 @@ export default function App() {
 
   // Closed MT5 Trades History
   const [closedTrades, setClosedTrades] = useState<ClosedTrade[]>([
+
     {
       ticket: 994180,
       symbol: 'EURUSD',
@@ -125,85 +125,58 @@ export default function App() {
       closeTime: '2026-07-21 09:42:15',
       magicNumber: 88492,
       mlConfidence: 81.0,
-      signalReason: 'XGBoost Bullish Signal',
-      closeReason: 'TAKE_PROFIT',
-      tags: ['#DayTrade', '#Forex']
+      closeReason: 'TP_HIT'
     },
     {
-      ticket: 994188,
+      ticket: 994181,
       symbol: 'GBPUSD',
       type: 'SELL',
-      lots: 0.20,
-      openPrice: 1.2980,
-      closePrice: 1.2940,
-      stopLoss: 1.3020,
-      takeProfit: 1.2940,
-      pnl: 80.00,
-      pnlPct: 0.77,
-      openTime: '2026-07-21 09:00:12',
-      closeTime: '2026-07-21 10:11:05',
+      lots: 0.10,
+      openPrice: 1.2500,
+      closePrice: 1.2480,
+      stopLoss: 1.2550,
+      takeProfit: 1.2400,
+      pnl: 20.00,
+      pnlPct: 0.16,
+      openTime: '2026-07-21 10:00:00',
+      closeTime: '2026-07-21 10:30:00',
       magicNumber: 88492,
-      mlConfidence: 76.8,
-      signalReason: 'LSTM Breakdown Pattern',
-      closeReason: 'TAKE_PROFIT',
-      tags: ['#Swing', '#TrendFollow']
+      mlConfidence: 75.0,
+      closeReason: 'MANUAL'
     },
     {
-      ticket: 994165,
+      ticket: 994182,
+      symbol: 'USDJPY',
+      type: 'BUY',
+      lots: 0.50,
+      openPrice: 150.00,
+      closePrice: 149.50,
+      stopLoss: 149.50,
+      takeProfit: 151.00,
+      pnl: -250.00,
+      pnlPct: -1.66,
+      openTime: '2026-07-21 11:00:00',
+      closeTime: '2026-07-21 11:45:00',
+      magicNumber: 88492,
+      mlConfidence: 60.0,
+      closeReason: 'SL_HIT'
+    },
+    {
+      ticket: 994183,
       symbol: 'XAUUSD',
       type: 'BUY',
-      lots: 0.15,
-      openPrice: 2372.00,
-      closePrice: 2388.50,
-      stopLoss: 2360.00,
-      takeProfit: 2390.00,
-      pnl: 247.50,
-      pnlPct: 0.70,
-      openTime: '2026-07-20 14:10:00',
-      closeTime: '2026-07-20 16:30:00',
-      magicNumber: 88492,
-      mlConfidence: 88.2,
-      signalReason: 'Order Book Wall Rejection + Momentum',
-      closeReason: 'CLOSED_MANUAL',
-      tags: ['#Gold', '#Scalp']
-    },
-    {
-      ticket: 994140,
-      symbol: 'BTCUSD',
-      type: 'BUY',
       lots: 0.05,
-      openPrice: 62500.00,
-      closePrice: 61800.00,
-      stopLoss: 61800.00,
-      takeProfit: 65000.00,
-      pnl: -350.00,
-      pnlPct: -1.12,
-      openTime: '2026-07-17 08:30:00',
-      closeTime: '2026-07-17 11:20:00',
+      openPrice: 2000.00,
+      closePrice: 2010.00,
+      stopLoss: 1990.00,
+      takeProfit: 2020.00,
+      pnl: 50.00,
+      pnlPct: 0.50,
+      openTime: '2026-07-21 12:00:00',
+      closeTime: '2026-07-21 14:00:00',
       magicNumber: 88492,
-      mlConfidence: 62.4,
-      signalReason: 'Breakout Attempt Failed',
-      closeReason: 'STOP_LOSS',
-      tags: ['#Crypto']
-    },
-    {
-      ticket: 994102,
-      symbol: 'USDJPY',
-      type: 'SELL',
-      lots: 0.30,
-      openPrice: 158.20,
-      closePrice: 156.80,
-      stopLoss: 159.00,
-      takeProfit: 156.50,
-      pnl: 275.00,
-      pnlPct: 0.88,
-      openTime: '2026-07-01 10:15:00',
-      closeTime: '2026-07-01 14:05:00',
-      magicNumber: 88492,
-      mlConfidence: 83.0,
-      signalReason: 'Macro Intervention Reversal Pattern',
-      closeReason: 'TAKE_PROFIT',
-      tags: ['#Swing', '#Forex']
+      mlConfidence: 88.0,
+      closeReason: 'MANUAL'
     }
   ]);
 
@@ -374,7 +347,12 @@ export default function App() {
 
 
   useEffect(() => {
-    if (isMockConfig || !auth) { setUser({ uid: 'mock-user-123', email: 'demo@example.com' } as User); setAuthLoading(false); return; }
+    if (isMockConfig || !auth) {
+      setUser({ uid: 'mock-user-123', email: 'demo@example.com' } as User);
+      setAuthLoading(false);
+      return;
+    }
+
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
       if (currentUser && db) {
@@ -394,6 +372,7 @@ export default function App() {
   // Save risk config to firestore when it changes (debounce could be added, but simplistic for now)
   useEffect(() => {
     if (isMockConfig || !db) return;
+    
     if (user && !authLoading) {
       setDoc(doc(db, 'users', user.uid), { riskConfig }, { merge: true }).catch(console.error);
     }
@@ -429,6 +408,7 @@ export default function App() {
         accountState={accountState}
         setAccountState={setAccountState}
         riskConfig={riskConfig}
+            setRiskConfig={setRiskConfig}
         onTriggerCircuitBreaker={handleTriggerCircuitBreaker}
         onResetCircuitBreaker={handleResetCircuitBreaker}
         onForceReconnect={forceReconnect}

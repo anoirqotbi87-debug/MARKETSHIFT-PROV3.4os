@@ -1,6 +1,8 @@
 {
-  "name": "MarketShift Pro V3.4",
-  "description": "Plan d'action complet et centre de contrôle interactif pour Bot de Trading MT5 Android avec modèles ML et gestion de risque.",
+  "name": "Remix: MarketShift Pro V3.4",
+  "description": "Plan d\u0027action complet et centre de contrôle interactif pour Bot de Trading MT5 Android avec modèles ML et gestion de risque.",
   "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }

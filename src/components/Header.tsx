@@ -2,7 +2,8 @@ import { signOut } from 'firebase/auth';
 import { auth } from '../firebase';
 import React, { useState } from 'react';
 import { ViewMode, ThemeMode, MT5AccountState, RiskConfig } from '../types';
-import { LogOut, ShieldAlert, Cpu, FileText, Smartphone, RefreshCw, Zap, WifiOff, AlertTriangle, Play, Radio, Sun, Moon, Contrast, Fingerprint, ChevronDown } from 'lucide-react';
+import { LogOut, ShieldAlert, Cpu, FileText, Smartphone, RefreshCw, Zap, WifiOff, AlertTriangle, Play, Radio, Sun, Moon, Contrast, Fingerprint, ChevronDown, Settings2 } from 'lucide-react';
+import { SettingsModal } from './SettingsModal';
 import { BiometricAuthModal } from './BiometricAuthModal';
 
 interface HeaderProps {
@@ -13,6 +14,7 @@ interface HeaderProps {
   accountState: MT5AccountState;
   setAccountState: React.Dispatch<React.SetStateAction<MT5AccountState>>;
   riskConfig: RiskConfig;
+  setRiskConfig?: React.Dispatch<React.SetStateAction<RiskConfig>>;
   onTriggerCircuitBreaker: () => void;
   onResetCircuitBreaker?: () => void;
   onForceReconnect?: () => void;
@@ -27,12 +29,14 @@ export const Header: React.FC<HeaderProps> = ({
   accountState,
   setAccountState,
   riskConfig,
+  setRiskConfig,
   onTriggerCircuitBreaker,
   onResetCircuitBreaker,
   onForceReconnect,
   onSimulateDisconnect
 }) => {
   const [isBioModalOpen, setIsBioModalOpen] = useState<boolean>(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
   const [isThemeMenuOpen, setIsThemeMenuOpen] = useState<boolean>(false);
   const togglePaperTrading = () => {
     setAccountState(prev => ({
@@ -273,6 +277,15 @@ export const Header: React.FC<HeaderProps> = ({
               )}
             </div>
 
+            {/* Settings Button */}
+            <button
+              onClick={() => setIsSettingsOpen(true)}
+              className="p-1.5 rounded-xl border border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white transition-all shadow-sm"
+              title="Paramètres de l'application"
+            >
+              <Settings2 className="w-4 h-4" />
+            </button>
+
             {/* Emergency Circuit Breaker Kill Switch / Reset Button */}
             <button
               onClick={() => {
@@ -304,7 +317,15 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* Biometric Prompt Modal for Header Reset */}
-        <BiometricAuthModal
+        {riskConfig && setRiskConfig && (
+        <SettingsModal 
+          isOpen={isSettingsOpen} 
+          onClose={() => setIsSettingsOpen(false)} 
+          riskConfig={riskConfig}
+          setRiskConfig={setRiskConfig as any}
+        />
+      )}
+      <BiometricAuthModal
           isOpen={isBioModalOpen}
           onClose={() => setIsBioModalOpen(false)}
           onSuccess={() => {

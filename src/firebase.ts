@@ -3,17 +3,23 @@ import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
 
-export const isMockConfig = (firebaseConfig as any).apiKey === 'remixed-api-key';
+export const isMockConfig = firebaseConfig.apiKey === 'remixed-api-key';
 
-let app;
-export let auth: any = null;
-export let googleProvider: any = null;
-export let db: any = null;
+let app: any;
+let auth: any;
+let googleProvider: any;
+let db: any;
 
 if (!isMockConfig) {
-  app = initializeApp(firebaseConfig);
-  auth = getAuth(app);
-  googleProvider = new GoogleAuthProvider();
-  const databaseId = (firebaseConfig as any).firestoreDatabaseId;
-  db = getFirestore(app, databaseId);
+  try {
+    app = initializeApp(firebaseConfig);
+    auth = getAuth(app);
+    googleProvider = new GoogleAuthProvider();
+    const databaseId = (firebaseConfig as any).firestoreDatabaseId;
+    db = getFirestore(app, databaseId);
+  } catch (e) {
+    console.error("Firebase init error:", e);
+  }
 }
+
+export { auth, googleProvider, db };

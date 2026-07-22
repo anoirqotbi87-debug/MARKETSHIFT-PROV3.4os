@@ -12,6 +12,7 @@ import { AIAssistantTab } from './tabs/AIAssistantTab';
 import { ExportModal } from './ExportModal';
 import { DepositWithdrawModal } from './DepositWithdrawModal';
 import { DailyProfitProgressBar } from './DailyProfitProgressBar';
+import { ClosedTradesChart } from './ClosedTradesChart';
 import { PushNotificationManager } from './PushNotificationManager';
 import { PriceAlertToastOverlay, ActiveToastAlert } from './PriceAlertToastOverlay';
 
@@ -368,6 +369,8 @@ export const MobileSimulatorView: React.FC<MobileSimulatorViewProps> = ({
           {/* Active Tab Screen Content */}
           <div className="p-3 min-h-[480px]">
             {activeTab === 'dashboard' && (
+              <div className="space-y-3">
+                <ClosedTradesChart closedTrades={closedTrades} />
               <DashboardTab
                 accountState={accountState}
                 positions={positions}
@@ -387,6 +390,7 @@ export const MobileSimulatorView: React.FC<MobileSimulatorViewProps> = ({
                 onResetCircuitBreaker={onResetCircuitBreaker}
                 onApplyNewsWeightToML={onApplyNewsWeightToML}
               />
+              </div>
             )}
 
             {activeTab === 'ml_engine' && (
