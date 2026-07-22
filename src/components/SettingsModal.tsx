@@ -55,12 +55,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         </div>
 
         {/* Content */}
-        <div className="flex flex-1 overflow-hidden">
-          {/* Sidebar */}
-          <div className="w-48 bg-slate-900/50 border-r border-slate-800 p-3 flex flex-col gap-1">
+        <div className="flex flex-col sm:flex-row flex-1 overflow-hidden">
+          {/* Tabs / Sidebar */}
+          <div className="w-full sm:w-48 bg-slate-900/50 border-b sm:border-b-0 sm:border-r border-slate-800 p-3 flex flex-row sm:flex-col gap-2 overflow-x-auto shrink-0">
             <button
               onClick={() => setActiveTab('trading')}
-              className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-colors ${
+              className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-colors shrink-0 whitespace-nowrap ${
                 activeTab === 'trading' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
               }`}
             >
@@ -69,7 +69,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </button>
             <button
               onClick={() => setActiveTab('general')}
-              className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-colors ${
+              className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-colors shrink-0 whitespace-nowrap ${
                 activeTab === 'general' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
               }`}
             >
@@ -78,7 +78,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </button>
             <button
               onClick={() => setActiveTab('connection')}
-              className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-colors ${
+              className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-colors shrink-0 whitespace-nowrap ${
                 activeTab === 'connection' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
               }`}
             >
