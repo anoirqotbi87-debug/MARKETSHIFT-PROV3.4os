@@ -4,5 +4,86 @@ dist/
 coverage/
 .DS_Store
 *.log
-.env*
+.env
+.env.local
+.env.*.local
 !.env.example
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Production
+build/
+dist/
+
+# Testing
+coverage/
+.nyc_output/
+
+# Misc
+.cache/
+temp/
+tmp/
+
+# Lock files - keep only package-lock.json
+bun.lock
+yarn.lock
+pnpm-lock.yaml
+
+# Script patches (keep organized in scripts/ instead)
+*.patch.cjs
+*.fix.cjs
+*.rewrite.cjs
+
+# Firebase
+firebase-applet-config.json
+google-services.json
+
+# Capacitor
+capacitor.config.*.json
+
+# Mobile build outputs
+*.apk
+*.ipa
+*.app
+
+# Build
+.gradle/
+.m2/
+gradlew
+gradlew.bat
+maven-wrapper.jar
+maven-wrapper.properties
+
+# Terraform / Infrastructure
+*.tfstate
+*.tfstate.*
+.terraform/
+
+# Docker
+.dockerignore
+
+# Backups
+*.bak
+*.backup
+*~
