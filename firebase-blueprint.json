@@ -1,0 +1,9 @@
+{
+  "schema": {
+    "users": {
+      "type": "collection",
+      "rules": "read: if request.auth != null && request.auth.uid == userId; write: if request.auth != null && request.auth.uid == userId;",
+      "documentId": "userId"
+    }
+  }
+}
