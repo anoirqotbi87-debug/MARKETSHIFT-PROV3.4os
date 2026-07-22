@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
+import { signInWithPopup, signInWithRedirect, GoogleAuthProvider } from 'firebase/auth';
+import { Capacitor } from '@capacitor/core';
 import { auth, googleProvider } from '../firebase';
 import { Brain, LogIn, AlertCircle } from 'lucide-react';
 
@@ -11,7 +12,11 @@ export const LoginScreen: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      await signInWithPopup(auth, googleProvider);
+      if (Capacitor.isNativePlatform()) {
+        await signInWithRedirect(auth, googleProvider);
+      } else {
+        await signInWithPopup(auth, googleProvider);
+      }
     } catch (err: any) {
       setError(err.message || 'Failed to sign in');
       setLoading(false);
