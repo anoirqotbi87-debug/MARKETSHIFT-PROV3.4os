@@ -108,6 +108,8 @@ export interface RiskConfig {
   circuitBreakerTriggeredAt?: string;
   enableNewsSentimentFilter?: boolean;
   minNewsSentimentScore?: number; // range -1.0 to +1.0 (e.g. -0.60)
+  metaApiToken?: string;
+  metaApiAccountId?: string;
 }
 
 export interface LogEntry {

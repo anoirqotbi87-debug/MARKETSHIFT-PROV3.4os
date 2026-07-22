@@ -295,6 +295,7 @@ export default function App() {
   const { forceReconnect, simulateDisconnect } = useMT5Connection(
     accountState,
     setAccountState,
+    riskConfig,
     {
       baseDelayMs: 2000,
       maxDelayMs: 30000,

@@ -11,6 +11,7 @@ interface UseMT5ConnectionOptions {
 export function useMT5Connection(
   accountState: MT5AccountState,
   setAccountState: Dispatch<SetStateAction<MT5AccountState>>,
+  riskConfig: any,
   options: UseMT5ConnectionOptions = {}
 ) {
   const {
@@ -97,8 +98,51 @@ export function useMT5Connection(
     }
   }, [setAccountState, onLogAdd]);
 
-  // Auto-reconnection loop with exponential backoff
+  // MetaApi Data Fetcher
   useEffect(() => {
+    let interval: NodeJS.Timeout;
+    
+    const fetchMetaApi = async () => {
+      if (!riskConfig?.metaApiToken || !riskConfig?.metaApiAccountId) return;
+      try {
+        const res = await fetch(`https://mt-client-api-v1.agiliumtrade.agiliumtrade.ai/users/current/accounts/${riskConfig.metaApiAccountId}/account-information`, {
+          headers: { 'auth-token': riskConfig.metaApiToken }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setAccountState(prev => ({
+            ...prev,
+            balance: data.balance || prev.balance,
+            equity: data.equity || prev.equity,
+            freeMargin: data.freeMargin || prev.freeMargin,
+            marginLevelPct: data.marginLevel || prev.marginLevelPct,
+            broker: data.broker || prev.broker,
+            server: data.server || prev.server,
+            currency: data.currency || prev.currency,
+            accountNumber: data.login?.toString() || prev.accountNumber,
+            isConnected: true
+          }));
+        }
+      } catch (e) {
+         console.error("MetaApi Error:", e);
+      }
+    };
+
+    if (riskConfig?.metaApiToken && riskConfig?.metaApiAccountId) {
+      if (onLogAdd) onLogAdd('Connexion à MetaApi initiée...', 'INFO');
+      fetchMetaApi();
+      interval = setInterval(fetchMetaApi, 5000); // Polling every 5 seconds
+    }
+    
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [riskConfig?.metaApiToken, riskConfig?.metaApiAccountId, setAccountState]);
+
+  // Auto-reconnection loop with exponential backoff (for simulator / base)
+  useEffect(() => {
+    if (riskConfig?.metaApiToken) return; // Disable simulator logic if using real API
+    
     if (accountState.isConnected) {
       if (timerRef.current) clearInterval(timerRef.current);
       setReconnectionState(prev => ({
@@ -185,7 +229,7 @@ export function useMT5Connection(
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [accountState.isConnected, reconnectionState.attempt, getBackoffDelay, setAccountState, onLogAdd]);
+  }, [accountState.isConnected, reconnectionState.attempt, getBackoffDelay, setAccountState, onLogAdd, riskConfig?.metaApiToken]);
 
   // Keep reconnectionState synced into accountState.reconnectionState
   useEffect(() => {

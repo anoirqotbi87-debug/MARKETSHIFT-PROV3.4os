@@ -214,40 +214,36 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </div>
   
                 <div>
-                  <h3 className="text-sm font-semibold text-slate-300 mb-4 uppercase tracking-wider">ZeroMQ Bridge MT5</h3>
+                  <h3 className="text-sm font-semibold text-slate-300 mb-4 uppercase tracking-wider">Connexion Cloud MetaApi</h3>
                   
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-xs font-bold text-slate-400 mb-1">Adresse Hôte (Host)</label>
+                      <label className="block text-xs font-bold text-slate-400 mb-1">MetaApi Token (JWT)</label>
                       <input 
-                        type="text" 
-                        defaultValue="tcp://127.0.0.1" 
+                        type="password" 
+                        value={localRisk.metaApiToken || ''}
+                        onChange={(e) => setLocalRisk({...localRisk, metaApiToken: e.target.value})}
+                        placeholder="eyJhbGciOi..."
                         className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 font-mono"
                       />
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-xs font-bold text-slate-400 mb-1">Port PUSH (Ordres)</label>
-                        <input 
-                          type="text" 
-                          defaultValue="32768" 
-                          className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 font-mono"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-slate-400 mb-1">Port SUB (Data)</label>
-                        <input 
-                          type="text" 
-                          defaultValue="32769" 
-                          className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 font-mono"
-                        />
-                      </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-400 mb-1">Account ID (MT4/MT5)</label>
+                      <input 
+                        type="text" 
+                        value={localRisk.metaApiAccountId || ''}
+                        onChange={(e) => setLocalRisk({...localRisk, metaApiAccountId: e.target.value})}
+                        placeholder="f8c739ea-..."
+                        className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 font-mono"
+                      />
                     </div>
                     
                     <div className="pt-4 mt-2 border-t border-slate-800">
-                      <button className="w-full py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-sm font-bold transition-colors flex items-center justify-center gap-2">
+                      <button 
+                        onClick={handleSave}
+                        className="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-bold transition-colors flex items-center justify-center gap-2">
                         <Zap className="w-4 h-4 text-amber-400" />
-                        Tester la connexion au Bridge
+                        Enregistrer et Connecter au Broker
                       </button>
                     </div>
                   </div>
