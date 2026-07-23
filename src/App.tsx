@@ -171,6 +171,7 @@ export default function App() {
     setMlStats,
     setPositions,
     setClosedTrades,
+    setLogs,
     {
       baseDelayMs: 2000,
       maxDelayMs: 30000,

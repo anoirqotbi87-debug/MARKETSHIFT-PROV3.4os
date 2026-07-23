@@ -17,7 +17,7 @@ class MLEngine:
         self.scalers = {}
         self.is_training = False
         self.supported_symbols = ["EURUSD", "GBPUSD", "XAUUSD", "USDJPY", "BTCUSD", "US30"]
-        self.timeframe = mt5.TIMEFRAME_H1
+        self.timeframe = mt5.TIMEFRAME_M1
         self.logger = logging.getLogger("uvicorn.error")
 
     def _get_data(self, symbol, num_candles=2000):
@@ -69,8 +69,8 @@ class MLEngine:
         self.logger.info("Background training complete.")
 
     def train_symbol(self, symbol):
-        self.logger.info(f"Training ML models for {symbol}...")
-        df = self._get_data(symbol, num_candles=5000) # 5000 hours ~ 200 days
+        self.logger.info(f"Training ML models for {symbol} (M1 Scalping)...")
+        df = self._get_data(symbol, num_candles=2000) # Reduced to 2000 to avoid No Data errors on M1
         if df is None:
             raise ValueError(f"No data for {symbol} in MT5")
             

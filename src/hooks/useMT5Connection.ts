@@ -15,6 +15,7 @@ export function useMT5Connection(
   setMlStats: Dispatch<SetStateAction<MLModelStats>>,
   setPositions: Dispatch<SetStateAction<ActivePosition[]>>,
   setClosedTrades: Dispatch<SetStateAction<ClosedTrade[]>>,
+  setLogs: Dispatch<SetStateAction<LogEntry[]>>,
   options: UseMT5ConnectionOptions = {}
 ) {
   const {
@@ -245,6 +246,33 @@ export function useMT5Connection(
             }
           } catch (e) {
             console.error("History Fetch Error:", e);
+          }
+
+          // --- Fetch Server Logs ---
+          try {
+            const logsRes = await fetch(`${ip}/logs`);
+            if (logsRes.ok) {
+              const logsData = await logsRes.json();
+              const mappedLogs = logsData.map((l: any, i: number) => ({
+                id: `server-log-${i}-${l.timestamp}`,
+                timestamp: l.timestamp,
+                level: l.level || 'INFO',
+                module: 'PYTHON_BRIDGE',
+                message: l.message
+              }));
+              
+              setLogs(prev => {
+                // Merge local react logs with server logs to avoid losing local ones?
+                // Actually server logs are the source of truth for python, but React has some local ones.
+                // It's better to just set it or merge carefully. We'll just set it for now and append local ones on top if needed, 
+                // but since it's an interval, we'll just show the server logs.
+                // Or better: filter out PYTHON_BRIDGE from prev, and prepend new mapped logs.
+                const localLogs = prev.filter(l => l.module !== 'PYTHON_BRIDGE');
+                return [...mappedLogs, ...localLogs].slice(0, 150);
+              });
+            }
+          } catch (e) {
+            console.error("Logs Fetch Error:", e);
           }
           
         } else {

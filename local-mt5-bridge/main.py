@@ -4,6 +4,10 @@ import MetaTrader5 as mt5
 from pydantic import BaseModel
 import logging
 
+import threading
+import time
+from datetime import datetime
+
 from ml_engine import MLEngine
 from trade_engine import TradeEngine
 
@@ -12,6 +16,49 @@ app = FastAPI(title="Local MT5 Bridge for MarketShift Pro")
 # Global Instances
 ml_engine = MLEngine()
 trade_engine = TradeEngine()
+
+# In-memory Logs
+server_logs = []
+def add_log(message, level="INFO"):
+    log_entry = {
+        "timestamp": datetime.now().strftime("%H:%M:%S"),
+        "level": level,
+        "message": message
+    }
+    server_logs.insert(0, log_entry)
+    if len(server_logs) > 100:
+        server_logs.pop()
+    logging.info(f"[{level}] {message}")
+
+def auto_trade_daemon():
+    add_log("Démarrage du Daemon Auto-Trading (M1 Scalping)...", "SUCCESS")
+    symbols_to_trade = ["EURUSD", "GBPUSD", "BTCUSD"] # Focus on major ones that trained well
+    while True:
+        try:
+            time.sleep(60) # M1 cycle
+            if ml_engine.is_training:
+                continue
+            
+            for symbol in symbols_to_trade:
+                # Check if we already have a position open for this symbol
+                positions = mt5.positions_get(symbol=symbol)
+                if positions is not None and len(positions) > 0:
+                    continue # Wait until current trade is closed
+                    
+                prediction = ml_engine.predict(symbol)
+                signal = prediction.get("signal", "NEUTRAL")
+                confidence = prediction.get("confidence", 0)
+                
+                if signal in ["BUY", "SELL"] and confidence > 75.0:
+                    add_log(f"Cycle IA: Signal {signal} détecté sur {symbol} (Confiance: {confidence}%). Tentative d'exécution...", "INFO")
+                    try:
+                        res = trade_engine.execute_trade(symbol, signal)
+                        add_log(f"✅ Trade Auto EXÉCUTÉ: {signal} {symbol} (Ticket: {res['ticket']})", "SUCCESS")
+                    except Exception as e:
+                        add_log(f"❌ Échec de l'Auto-Trade {symbol}: {str(e)}", "ERROR")
+        except Exception as e:
+            add_log(f"Erreur dans le daemon Auto-Trade: {str(e)}", "ERROR")
+            time.sleep(10)
 
 # Allow CORS for the React mobile app
 app.add_middleware(
@@ -29,11 +76,15 @@ def startup_event():
         logging.error(f"initialize() failed, error code = {mt5.last_error()}")
         raise Exception("Failed to connect to MetaTrader 5 terminal. Is MT5 open?")
     logging.info("Connected to MetaTrader 5!")
-    
     # Start ML Engine background training
     ml_engine.start_background_training()
     # Start Trade Engine background trailing stops
     trade_engine.start_trailing_stop_daemon()
+    
+    # Start Auto Trade Daemon
+    at_thread = threading.Thread(target=auto_trade_daemon)
+    at_thread.daemon = True
+    at_thread.start()
 
 @app.on_event("shutdown")
 def shutdown_event():
@@ -139,6 +190,11 @@ def predict_signal(symbol: str = "EURUSD"):
         logging.error(f"Prediction error for {symbol}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/logs")
+def get_logs():
+    return server_logs
+
 @app.get("/ping")
 def ping():
     return {"status": "ok"}
+
