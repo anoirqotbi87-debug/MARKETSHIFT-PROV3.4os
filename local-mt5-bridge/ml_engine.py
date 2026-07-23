@@ -20,8 +20,8 @@ class MLEngine:
         self.timeframe = mt5.TIMEFRAME_M1
         self.logger = logging.getLogger("uvicorn.error")
 
-    def _get_data(self, symbol, num_candles=2000):
-        rates = mt5.copy_rates_from_pos(symbol, self.timeframe, 0, num_candles)
+    def _get_data(self, symbol, timeframe, num_candles=2000):
+        rates = mt5.copy_rates_from_pos(symbol, timeframe, 0, num_candles)
         if rates is None or len(rates) == 0:
             return None
         df = pd.DataFrame(rates)
@@ -29,7 +29,7 @@ class MLEngine:
         df.set_index('time', inplace=True)
         return df
 
-    def _add_features(self, df):
+    def _add_features(self, df, symbol):
         # Add Technical Indicators
         df['rsi'] = RSIIndicator(df['close'], window=14).rsi()
         macd = MACD(df['close'])
@@ -51,6 +51,45 @@ class MLEngine:
         # Returns
         df['returns'] = df['close'].pct_change()
         
+        # --- SMART MONEY CONCEPTS (SMC) ---
+        
+        # 1. Fair Value Gaps (FVG)
+        # Bullish FVG: Low of current candle is higher than High of candle t-2
+        df['fvg_bullish'] = (df['low'] > df['high'].shift(2)).astype(int)
+        # Bearish FVG: High of current candle is lower than Low of candle t-2
+        df['fvg_bearish'] = (df['high'] < df['low'].shift(2)).astype(int)
+        
+        # 2. Order Blocks (OB)
+        # Bullish OB: Last bearish candle before a strong bullish move (body > 1.5 * ATR)
+        is_strong_bullish = (df['close'] - df['open']) > (1.5 * df['atr'])
+        last_is_bearish = df['close'].shift(1) < df['open'].shift(1)
+        df['ob_bullish'] = (is_strong_bullish & last_is_bearish).astype(int)
+        
+        # Bearish OB: Last bullish candle before a strong bearish move
+        is_strong_bearish = (df['open'] - df['close']) > (1.5 * df['atr'])
+        last_is_bullish = df['close'].shift(1) > df['open'].shift(1)
+        df['ob_bearish'] = (is_strong_bearish & last_is_bullish).astype(int)
+        
+        # --- MULTI-TIMEFRAME (MTF) M15 TREND ---
+        try:
+            m15_df = self._get_data(symbol, mt5.TIMEFRAME_M15, num_candles=500)
+            if m15_df is not None:
+                m15_ema = EMAIndicator(m15_df['close'], window=50).ema_indicator()
+                m15_trend = (m15_df['close'] > m15_ema).astype(int) # 1 if bullish, 0 if bearish
+                m15_trend.name = 'mtf_trend_m15'
+                
+                # Map M15 trend to M1 df
+                df['time_m15'] = df.index.floor('15min')
+                # we need to make sure index of m15_trend is timezone naive or matches df
+                df = df.join(m15_trend, on='time_m15', how='left')
+                df['mtf_trend_m15'] = df['mtf_trend_m15'].ffill().fillna(0)
+                df.drop(columns=['time_m15'], inplace=True)
+            else:
+                df['mtf_trend_m15'] = 0
+        except Exception as e:
+            self.logger.warning(f"Failed to fetch M15 for {symbol}, MTF trend disabled: {e}")
+            df['mtf_trend_m15'] = 0
+
         # Target: 1 if next candle is UP, 0 if DOWN
         df['target'] = (df['close'].shift(-1) > df['close']).astype(int)
         
@@ -69,14 +108,18 @@ class MLEngine:
         self.logger.info("Background training complete.")
 
     def train_symbol(self, symbol):
-        self.logger.info(f"Training ML models for {symbol} (M1 Scalping)...")
-        df = self._get_data(symbol, num_candles=2000) # Reduced to 2000 to avoid No Data errors on M1
+        self.logger.info(f"Training ML models for {symbol} (M1 Scalping with SMC)...")
+        df = self._get_data(symbol, self.timeframe, num_candles=2000)
         if df is None:
             raise ValueError(f"No data for {symbol} in MT5")
             
-        df = self._add_features(df)
+        df = self._add_features(df, symbol)
         
-        features = ['rsi', 'macd', 'macd_signal', 'atr', 'ema_50', 'ema_200', 'bb_high', 'bb_low', 'body', 'upper_shadow', 'lower_shadow', 'returns']
+        features = [
+            'rsi', 'macd', 'macd_signal', 'atr', 'ema_50', 'ema_200', 'bb_high', 'bb_low', 
+            'body', 'upper_shadow', 'lower_shadow', 'returns',
+            'fvg_bullish', 'fvg_bearish', 'ob_bullish', 'ob_bearish', 'mtf_trend_m15'
+        ]
         
         X = df[features]
         y = df['target']
@@ -108,13 +151,17 @@ class MLEngine:
         if symbol not in self.models:
             return {"signal": "NEUTRAL", "confidence": 0, "reason": "Model not trained yet"}
             
-        df = self._get_data(symbol, num_candles=300)
+        df = self._get_data(symbol, self.timeframe, num_candles=300)
         if df is None:
             return {"signal": "NEUTRAL", "confidence": 0, "reason": "Not enough data"}
             
-        df = self._add_features(df)
+        df = self._add_features(df, symbol)
         
-        features = ['rsi', 'macd', 'macd_signal', 'atr', 'ema_50', 'ema_200', 'bb_high', 'bb_low', 'body', 'upper_shadow', 'lower_shadow', 'returns']
+        features = [
+            'rsi', 'macd', 'macd_signal', 'atr', 'ema_50', 'ema_200', 'bb_high', 'bb_low', 
+            'body', 'upper_shadow', 'lower_shadow', 'returns',
+            'fvg_bullish', 'fvg_bearish', 'ob_bullish', 'ob_bearish', 'mtf_trend_m15'
+        ]
         
         latest = df.iloc[-1:]
         X = latest[features]
@@ -137,10 +184,18 @@ class MLEngine:
             signal = "NEUTRAL"
             confidence = max(prob_up, 1 - prob_up) * 100
             
+        reason_parts = [f"RSI: {latest['rsi'].values[0]:.1f}"]
+        if latest['fvg_bullish'].values[0] == 1: reason_parts.append("Bullish FVG")
+        if latest['fvg_bearish'].values[0] == 1: reason_parts.append("Bearish FVG")
+        if latest['ob_bullish'].values[0] == 1: reason_parts.append("Bullish OB")
+        if latest['ob_bearish'].values[0] == 1: reason_parts.append("Bearish OB")
+        if latest['mtf_trend_m15'].values[0] == 1: reason_parts.append("M15 Trend UP")
+        else: reason_parts.append("M15 Trend DOWN")
+
         return {
             "signal": signal,
             "confidence": round(confidence, 1),
-            "reason": f"RSI: {latest['rsi'].values[0]:.1f} | MACD: {latest['macd'].values[0]:.4f}"
+            "reason": " | ".join(reason_parts)
         }
 
     def start_background_training(self):
