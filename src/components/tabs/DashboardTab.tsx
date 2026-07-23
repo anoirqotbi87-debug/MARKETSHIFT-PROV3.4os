@@ -25,6 +25,7 @@ import {
 import { BiometricAuthModal } from '../BiometricAuthModal';
 import { exportTradesToCSV, exportFullReportToCSV } from '../../utils/csvExport';
 import { TradingViewWidget } from '../TradingViewWidget';
+import { CollapsibleSection } from '../CollapsibleSection';
 
 // Date parser helper for trades with time strings or date strings
 function parseTradeDate(timeStr: string): Date {
@@ -348,30 +349,35 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
       {/* 1. OVERVIEW SUB-TAB CONTENT */}
       {dashboardSubTab === 'OVERVIEW' && (
         <div className="space-y-4 animate-in fade-in">
-          {/* Market Overview Top 5 Watched Symbols Sparklines */}
-          <MarketOverviewSparklines />
+          
+          <CollapsibleSection 
+            title="Performance Globale" 
+            icon={<BarChart2 className="w-4 h-4" />} 
+            defaultExpanded={true}
+          >
+            {/* Interactive PnL & Equity Evolution Chart */}
+            <PnLEquityChart accountState={accountState} />
 
-          {/* Interactive PnL & Equity Evolution Chart */}
-          <PnLEquityChart accountState={accountState} />
+            {/* Equity Curve vs Buy & Hold Benchmark Chart */}
+            <EquityBenchmarkChart accountState={accountState} />
+          </CollapsibleSection>
 
-          {/* Equity Curve vs Buy & Hold Benchmark Chart */}
-          <EquityBenchmarkChart accountState={accountState} />
+          <CollapsibleSection 
+            title="Aperçu du Marché" 
+            icon={<Globe className="w-4 h-4" />} 
+            defaultExpanded={false}
+          >
+            {/* Market Overview Top 5 Watched Symbols Sparklines */}
+            <MarketOverviewSparklines />
+          </CollapsibleSection>
 
-          {/* Quick Active Positions List inside Overview */}
-          {positions.length > 0 && (
-            <div className="glass-card rounded-2xl p-3.5 space-y-3">
-              <div className="flex items-center justify-between text-xs pb-2 border-b border-slate-800">
-                <span className="font-bold text-white flex items-center gap-1.5 uppercase tracking-wide">
-                  <DollarSign className="w-3.5 h-3.5 text-indigo-400" />
-                  Positions Actives en Direct ({positions.length})
-                </span>
-                <button
-                  onClick={() => setDashboardSubTab('TRADING')}
-                  className="text-[10px] font-mono font-bold text-indigo-300 hover:text-white underline"
-                >
-                  Voir tout l'historique →
-                </button>
-              </div>
+          <CollapsibleSection 
+            title="Positions Actives (Résumé)" 
+            icon={<Briefcase className="w-4 h-4" />} 
+            defaultExpanded={false}
+          >
+            {/* Quick Active Positions List inside Overview */}
+            {positions.length > 0 ? (
               <div className="space-y-2 font-mono">
                 {positions.slice(0, 3).map((pos) => (
                   <div key={pos.ticket} className="bg-slate-950/80 p-2.5 rounded-xl border border-slate-800 text-xs flex items-center justify-between">
@@ -389,8 +395,10 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
                   </div>
                 ))}
               </div>
-            </div>
-          )}
+            ) : (
+              <div className="text-center py-4 text-xs text-slate-500">Aucune position ouverte.</div>
+            )}
+          </CollapsibleSection>
         </div>
       )}
 
@@ -516,282 +524,146 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
       {dashboardSubTab === 'TRADING' && (
         <div className="space-y-4 animate-in fade-in">
 
-
-
-
-
-      {/* Active Positions List */}
-      <div className="glass-card rounded-2xl p-3.5 space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs pb-2 border-b border-slate-800">
-          <span className="font-bold text-white flex items-center gap-1.5 uppercase tracking-wide">
-            <DollarSign className="w-3.5 h-3.5 text-indigo-400" />
-            Positions MT5 Actives ({positions.length})
-          </span>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => exportTradesToCSV(positions, closedTrades)}
-              className="flex items-center gap-1 text-[10px] font-bold text-indigo-300 hover:text-white bg-indigo-950/80 border border-indigo-700/60 px-2 py-1 rounded-lg transition-colors font-mono"
-              title="Exporter toutes les positions et l'historique vers un fichier CSV"
-            >
-              <Download className="w-3 h-3" />
-              <span>Export CSV</span>
-            </button>
-
-            {positions.length > 0 && (
-              <button
-                onClick={onCloseAllPositions}
-                className="text-[11px] font-semibold text-red-400 hover:text-red-300 bg-red-950/60 border border-red-800/80 px-2.5 py-0.5 rounded-lg transition-colors"
-              >
-                Tout Clôturer
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Modern Native Selectbox for Active Tags */}
-        {positions.length > 0 && allActiveTags.length > 0 && (
-          <div className="flex items-center gap-2 pb-1">
-            <span className="text-slate-400 text-[10px] font-mono flex items-center gap-1">
-              <Filter className="w-3 h-3 text-indigo-400" /> Filtrer:
-            </span>
-            <select
-              value={activeTagFilter}
-              onChange={(e) => setActiveTagFilter(e.target.value)}
-              className="modern-select flex-1"
-            >
-              <option value="ALL">Tous les tags ({positions.length})</option>
-              {allActiveTags.map(tag => (
-                <option key={tag} value={tag}>
-                  {tag} ({positions.filter(p => p.tags?.includes(tag)).length})
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-
-        {filteredPositions.length === 0 ? (
-          <div className="text-center py-6 bg-slate-950/50 rounded-xl border border-slate-800/60 text-xs text-slate-500">
-            {activeTagFilter !== 'ALL' 
-              ? `Aucune position avec le tag ${activeTagFilter}.` 
-              : 'Aucune position ouverte actuellement. Le bot analyse le marché en direct.'}
-          </div>
-        ) : (
-          <div className="space-y-2 font-mono">
-            {filteredPositions.map((pos) => (
-              <div key={pos.ticket} className="bg-slate-950/80 p-3 rounded-xl border border-slate-800 text-xs space-y-2">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="space-y-0.5">
-                    <div className="flex items-center gap-1.5">
-                      <span className={`px-1.5 py-0.2 rounded text-[10px] font-bold ${
-                        pos.type === 'BUY' ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-red-950 text-red-400 border border-red-800'
-                      }`}>
-                        {pos.type} {pos.lots} Lots
-                      </span>
-                      <span className="font-bold text-white text-sm">{pos.symbol}</span>
-                      <span className="text-[10px] text-slate-500">#{pos.ticket}</span>
-                    </div>
-                    <div className="text-[10px] text-slate-400 flex items-center gap-2">
-                      <span>Prix: {pos.openPrice}</span>
-                      <span>→ {pos.currentPrice}</span>
-                      <span className="text-indigo-400 font-bold">ML {pos.mlConfidence}%</span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2.5">
-                    <div className="text-right">
-                      <div className={`font-bold text-sm ${pos.pnl >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                        {pos.pnl >= 0 ? '+' : ''}${pos.pnl.toFixed(2)}
-                      </div>
-                      <div className="text-[9px] text-slate-500">SL: {pos.stopLoss}</div>
-                    </div>
-
-                    <button
-                      onClick={() => onClosePosition(pos.ticket)}
-                      className="p-1 hover:bg-slate-800 text-slate-400 hover:text-red-400 rounded-lg transition-colors"
-                      title="Clôturer cette position"
-                    >
-                      <XCircle className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Tag Categorization Control Bar */}
-                <div className="pt-2 border-t border-slate-900/80 flex items-center justify-between">
-                  <TradeTagManager
-                    tags={pos.tags}
-                    onAddTag={(tag) => handleAddTagToPosition(pos.ticket, tag)}
-                    onRemoveTag={(tag) => handleRemoveTagFromPosition(pos.ticket, tag)}
-                  />
-                  <span className="text-[9px] text-slate-500 font-sans">{pos.signalReason}</span>
-                </div>
+          <CollapsibleSection 
+            title={`Positions MT5 Actives (${positions.length})`}
+            icon={<Briefcase className="w-4 h-4" />}
+            defaultExpanded={true}
+            contentClassName="p-0" // Custom padding because the active tags need spacing differently
+            headerRight={
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={(e) => { e.stopPropagation(); exportTradesToCSV(positions, closedTrades); }}
+                  className="p-1.5 bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-700/60 rounded-lg text-indigo-300 transition-colors"
+                  title="Exporter positions"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                </button>
+                {positions.length > 0 && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onCloseAllPositions(); }}
+                    className="p-1.5 bg-red-950/60 hover:bg-red-900 border border-red-800/80 rounded-lg text-red-400 transition-colors"
+                    title="Tout Clôturer"
+                  >
+                    <XCircle className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Closed Trades History Section */}
-      <div className="glass-card rounded-2xl p-3.5 space-y-3 border border-slate-800">
-        
-        {/* Section Header & CSV Export */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs pb-2 border-b border-slate-800">
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-lg bg-indigo-950/80 border border-indigo-700/60 text-indigo-400">
-              <History className="w-4 h-4" />
-            </div>
-            <div>
-              <span className="font-bold text-white flex items-center gap-2 uppercase tracking-wide">
-                <span>Historique des Trades Clôturés</span>
-                <span className="px-2 py-0.2 bg-indigo-950 text-indigo-300 border border-indigo-700 text-[10px] rounded-full font-mono">
-                  {filteredClosedTrades.length} / {closedTrades.length}
-                </span>
-              </span>
-              <p className="text-[10px] text-slate-400">
-                Filtrez vos positions fermées par ticket, symbole ou plage temporelle
-              </p>
-            </div>
-          </div>
-
-          <button
-            onClick={() => exportFullReportToCSV(accountState, positions, closedTrades, logs)}
-            className="flex items-center gap-1 text-[10px] font-bold text-emerald-300 hover:text-white bg-emerald-950/80 border border-emerald-700/60 px-2.5 py-1 rounded-lg transition-colors font-mono self-start sm:self-auto"
-            title="Exporter rapport complet (Compte + Trades + Logs) au format CSV"
+            }
           >
-            <FileSpreadsheet className="w-3 h-3" />
-            <span>Rapport CSV</span>
-          </button>
-        </div>
+            <div className="p-3.5 space-y-3">
+              {/* Modern Native Selectbox for Active Tags */}
+              {positions.length > 0 && allActiveTags.length > 0 && (
+                <div className="flex items-center gap-2 pb-1">
+                  <span className="text-slate-400 text-[10px] font-mono flex items-center gap-1">
+                    <Filter className="w-3 h-3 text-indigo-400" /> Filtrer:
+                  </span>
+                  <select
+                    value={activeTagFilter}
+                    onChange={(e) => setActiveTagFilter(e.target.value)}
+                    className="modern-select flex-1"
+                  >
+                    <option value="ALL">Tous les tags ({positions.length})</option>
+                    {allActiveTags.map(tag => (
+                      <option key={tag} value={tag}>
+                        {tag} ({positions.filter(p => p.tags?.includes(tag)).length})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
-        {/* Search Bar & Date Filter Controls Toolbar */}
-        <div className="space-y-2 bg-slate-950/70 p-2.5 rounded-xl border border-slate-800/80">
-          
-          {/* Top Row: Search Field & Date Preset Buttons */}
-          <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2">
-            
-            {/* Search Input Field */}
-            <div className="relative flex-1">
-              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Rechercher par ticket (#994180), symbole (EURUSD), motif..."
-                className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-8 pr-7 py-1.5 text-xs text-slate-100 placeholder-slate-500 font-mono focus:outline-none focus:border-indigo-500/80 transition-all"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors"
-                  title="Effacer la recherche"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
+              {filteredPositions.length === 0 ? (
+                <div className="text-center py-6 bg-slate-950/50 rounded-xl border border-slate-800/60 text-xs text-slate-500">
+                  {activeTagFilter !== 'ALL' 
+                    ? `Aucune position avec le tag ${activeTagFilter}.` 
+                    : 'Aucune position ouverte actuellement. Le bot analyse le marché en direct.'}
+                </div>
+              ) : (
+                <div className="space-y-2 font-mono">
+                  {filteredPositions.map((pos) => (
+                    <div key={pos.ticket} className="bg-slate-950/80 p-3 rounded-xl border border-slate-800 text-xs space-y-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="space-y-0.5">
+                          <div className="flex items-center gap-1.5">
+                            <span className={`px-1.5 py-0.2 rounded text-[10px] font-bold ${
+                              pos.type === 'BUY' ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-red-950 text-red-400 border border-red-800'
+                            }`}>
+                              {pos.type} {pos.lots} Lots
+                            </span>
+                            <span className="font-bold text-white text-sm">{pos.symbol}</span>
+                            <span className="text-[10px] text-slate-500">#{pos.ticket}</span>
+                          </div>
+                          <div className="text-[10px] text-slate-400 flex items-center gap-2">
+                            <span>Prix: {pos.openPrice}</span>
+                            <span>→ {pos.currentPrice}</span>
+                            <span className="text-indigo-400 font-bold">ML {pos.mlConfidence}%</span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2.5">
+                          <div className="text-right">
+                            <div className={`font-bold text-sm ${pos.pnl >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                              {pos.pnl >= 0 ? '+' : ''}${pos.pnl.toFixed(2)}
+                            </div>
+                            <div className="text-[9px] text-slate-500">SL: {pos.stopLoss}</div>
+                          </div>
+
+                          <button
+                            onClick={() => onClosePosition(pos.ticket)}
+                            className="p-1 hover:bg-slate-800 text-slate-400 hover:text-red-400 rounded-lg transition-colors"
+                            title="Clôturer cette position"
+                          >
+                            <XCircle className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Tag Categorization Control Bar */}
+                      <div className="pt-2 border-t border-slate-900/80 flex items-center justify-between">
+                        <TradeTagManager
+                          tags={pos.tags}
+                          onAddTag={(tag) => handleAddTagToPosition(pos.ticket, tag)}
+                          onRemoveTag={(tag) => handleRemoveTagFromPosition(pos.ticket, tag)}
+                        />
+                        <span className="text-[9px] text-slate-500 font-sans">{pos.signalReason}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
+          </CollapsibleSection>
 
-            {/* Date Range Presets Selector */}
-            <div className="flex items-center gap-1 overflow-x-auto no-scrollbar font-mono text-[10px]">
-              <span className="text-slate-400 flex items-center gap-1 mr-1 text-[10px] shrink-0">
-                <CalendarDays className="w-3 h-3 text-indigo-400" />
-                <span className="hidden sm:inline">Période:</span>
-              </span>
-              {[
-                { id: 'ALL', label: 'Tous' },
-                { id: 'TODAY', label: "Aujourd'hui" },
-                { id: '7D', label: '7 Jours' },
-                { id: '30D', label: '30 Jours' },
-                { id: 'CUSTOM', label: 'Personnalisé' }
-              ].map((p) => (
-                <button
-                  key={p.id}
-                  onClick={() => setDatePreset(p.id as any)}
-                  className={`px-2.5 py-1 rounded-lg font-bold transition-all whitespace-nowrap border ${
-                    datePreset === p.id
-                      ? 'bg-indigo-600 text-white border-indigo-400 shadow-sm'
-                      : 'bg-slate-900 text-slate-400 hover:text-white border-slate-800'
-                  }`}
-                >
-                  {p.label}
-                </button>
-              ))}
-            </div>
-
-          </div>
-
-          {/* Custom Date Pickers Drawer (shown when datePreset === 'CUSTOM') */}
-          {datePreset === 'CUSTOM' && (
-            <div className="pt-2 border-t border-slate-800/80 flex flex-wrap items-center gap-2 font-mono text-[10px] animate-in fade-in">
-              <div className="flex items-center gap-1.5 bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-800">
-                <Calendar className="w-3.5 h-3.5 text-indigo-400" />
-                <span className="text-slate-400">Du :</span>
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="bg-slate-950 border border-slate-800 rounded px-1.5 py-0.5 text-xs text-white focus:outline-none focus:border-indigo-500"
-                />
-              </div>
-
-              <div className="flex items-center gap-1.5 bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-800">
-                <Calendar className="w-3.5 h-3.5 text-indigo-400" />
-                <span className="text-slate-400">Au :</span>
-                <input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  className="bg-slate-950 border border-slate-800 rounded px-1.5 py-0.5 text-xs text-white focus:outline-none focus:border-indigo-500"
-                />
-              </div>
-
-              {(startDate || endDate) && (
-                <button
-                  onClick={() => { setStartDate(''); setEndDate(''); }}
-                  className="px-2 py-1 text-slate-400 hover:text-white bg-slate-900 rounded-lg border border-slate-800 text-[9px]"
-                >
-                  Effacer Dates
-                </button>
-              )}
-            </div>
-          )}
-
-          {/* Modern Native Selectbox for Closed Tags */}
-          {closedTrades.length > 0 && allClosedTags.length > 0 && (
-            <div className="pt-2 border-t border-slate-800/80 flex items-center gap-2">
-              <span className="text-slate-400 text-[10px] font-mono flex items-center gap-1">
-                <Filter className="w-3 h-3 text-indigo-400" /> Tag:
-              </span>
-              <select
-                value={closedTagFilter}
-                onChange={(e) => setClosedTagFilter(e.target.value)}
-                className="modern-select flex-1"
+          <CollapsibleSection
+            title={`Historique des Trades Clôturés`}
+            icon={<History className="w-4 h-4" />}
+            defaultExpanded={false}
+            contentClassName="p-0"
+            headerRight={
+              <button
+                onClick={(e) => { e.stopPropagation(); exportFullReportToCSV(accountState, positions, closedTrades, logs); }}
+                className="p-1.5 bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-700/60 rounded-lg text-emerald-400 transition-colors"
+                title="Exporter rapport complet (CSV)"
               >
-                <option value="ALL">Tous les tags ({closedTrades.length})</option>
-                {allClosedTags.map(tag => (
-                  <option key={tag} value={tag}>
-                    {tag} ({closedTrades.filter(t => t.tags?.includes(tag)).length})
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-
-        </div>
-
-        {/* Filtered Trades Stats Summary & Reset Button */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-[10px] font-mono bg-slate-950/40 p-2 rounded-xl border border-slate-800/60">
-          <div className="flex flex-wrap items-center gap-3">
-            <span className="text-slate-400">
-              Résultats: <strong className="text-white">{filteredStats.count}</strong> trade(s)
-            </span>
-            <span className="text-slate-400">
-              PnL Filtré: <strong className={`font-bold ${filteredStats.totalPnL >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                {filteredStats.totalPnL >= 0 ? '+' : ''}${filteredStats.totalPnL.toFixed(2)}
-              </strong>
-            </span>
-            <span className="text-slate-400">
-              Taux de Victoire: <strong className="text-emerald-300">{filteredStats.winRate}%</strong> ({filteredStats.winningCount}/{filteredStats.count})
-            </span>
+                <FileSpreadsheet className="w-3.5 h-3.5" />
+              </button>
+            }
+          >
+            <div className="p-3.5 space-y-3">
+              {/* Filtered Trades Stats Summary & Reset Button */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-[10px] font-mono bg-slate-950/40 p-2 rounded-xl border border-slate-800/60">
+                <div className="flex flex-wrap items-center gap-3">
+                  <span className="text-slate-400">
+                    Résultats: <strong className="text-white">{filteredStats.count}</strong> trade(s)
+                  </span>
+                  <span className="text-slate-400">
+                    PnL Filtré: <strong className={`font-bold ${filteredStats.totalPnL >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                      {filteredStats.totalPnL >= 0 ? '+' : ''}${filteredStats.totalPnL.toFixed(2)}
+                    </strong>
+                  </span>
+                  <span className="text-slate-400">
+                    Taux de Victoire: <strong className="text-emerald-300">{filteredStats.winRate}%</strong> ({filteredStats.winningCount}/{filteredStats.count})
+                  </span>
           </div>
 
           {(searchQuery !== '' || datePreset !== 'ALL' || closedTagFilter !== 'ALL' || startDate !== '' || endDate !== '') && (
@@ -867,6 +739,7 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
           </div>
         )}
       </div>
+      </CollapsibleSection>
       </div>
       )}
 
