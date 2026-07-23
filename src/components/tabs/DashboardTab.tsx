@@ -20,7 +20,7 @@ import { LiveMLLatencyChart } from '../LiveMLLatencyChart';
 import { InfrastructureMonitor } from '../InfrastructureMonitor';
 import { TradeTagManager, TradeTagPill } from '../TradeTagManager';
 import { 
-  TrendingUp, TrendingDown, DollarSign, Activity, AlertTriangle, ShieldCheck, XCircle, ArrowUpRight, ArrowDownRight, Download, History, FileSpreadsheet, Filter, Tag, QrCode, Wallet, Search, Calendar, CalendarDays, X, RotateCcw, Fingerprint, BarChart2, Brain, Newspaper, PieChart, Server 
+  TrendingUp, TrendingDown, DollarSign, Activity, AlertTriangle, ShieldCheck, XCircle, ArrowUpRight, ArrowDownRight, Download, History, FileSpreadsheet, Filter, Tag, QrCode, Wallet, Search, Calendar, CalendarDays, X, RotateCcw, Fingerprint, BarChart2, Brain, Newspaper, PieChart, Server, Globe, Briefcase 
 } from 'lucide-react';
 import { BiometricAuthModal } from '../BiometricAuthModal';
 import { exportTradesToCSV, exportFullReportToCSV } from '../../utils/csvExport';
@@ -64,7 +64,6 @@ interface DashboardTabProps {
   onClosePosition: (ticket: number) => void;
   onCloseAllPositions: () => void;
   onOpenDepositModal?: () => void;
-  onResetCircuitBreaker?: () => void;
   onResetCircuitBreaker?: () => void;
   onApplyNewsWeightToML?: (boostPct: number, reason: string) => void;
   executeTrade?: (symbol: string, direction: 'BUY' | 'SELL') => Promise<any>;
