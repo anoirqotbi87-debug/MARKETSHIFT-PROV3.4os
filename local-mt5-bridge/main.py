@@ -5,11 +5,13 @@ from pydantic import BaseModel
 import logging
 
 from ml_engine import MLEngine
+from trade_engine import TradeEngine
 
 app = FastAPI(title="Local MT5 Bridge for MarketShift Pro")
 
-# Global ML Engine Instance
+# Global Instances
 ml_engine = MLEngine()
+trade_engine = TradeEngine()
 
 # Allow CORS for the React mobile app
 app.add_middleware(
@@ -30,6 +32,8 @@ def startup_event():
     
     # Start ML Engine background training
     ml_engine.start_background_training()
+    # Start Trade Engine background trailing stops
+    trade_engine.start_trailing_stop_daemon()
 
 @app.on_event("shutdown")
 def shutdown_event():
@@ -42,7 +46,6 @@ def get_account_information():
         raise HTTPException(status_code=500, detail="Could not retrieve account info")
     
     # Return formatted info matching what the React app expects from MetaApi
-    # React expects: balance, equity, freeMargin, marginLevel, broker, server, currency, login
     return {
         "balance": account_info.balance,
         "equity": account_info.equity,
@@ -74,8 +77,58 @@ def get_positions():
             "stopLoss": pos.sl,
             "takeProfit": pos.tp,
             "openTime": pos.time,
+            "magicNumber": pos.magic
         })
     return formatted_positions
+
+@app.get("/history")
+def get_history():
+    import datetime
+    # Get last 24 hours of deals
+    from_date = datetime.datetime.now() - datetime.timedelta(days=1)
+    to_date = datetime.datetime.now()
+    deals = mt5.history_deals_get(from_date, to_date)
+    if deals is None:
+        return []
+        
+    formatted_deals = []
+    for deal in deals:
+        if deal.entry == mt5.DEAL_ENTRY_OUT: # Only closed trades
+            formatted_deals.append({
+                "ticket": deal.ticket,
+                "symbol": deal.symbol,
+                "type": "BUY" if deal.type == mt5.DEAL_TYPE_BUY else "SELL",
+                "lots": deal.volume,
+                "openPrice": 0.0, # Deal OUT doesn't have open price easily accessible without order ticket
+                "closePrice": deal.price,
+                "pnl": deal.profit,
+                "closeTime": deal.time,
+                "magicNumber": deal.magic
+            })
+    return formatted_deals
+
+class TradeRequest(BaseModel):
+    symbol: str
+    direction: str
+
+class CloseRequest(BaseModel):
+    ticket: int
+
+@app.post("/trade")
+def execute_trade(req: TradeRequest):
+    try:
+        res = trade_engine.execute_trade(req.symbol, req.direction)
+        return res
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.post("/close")
+def close_position(req: CloseRequest):
+    try:
+        res = trade_engine.close_position(req.ticket)
+        return res
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 @app.get("/predict")
 def predict_signal(symbol: str = "EURUSD"):

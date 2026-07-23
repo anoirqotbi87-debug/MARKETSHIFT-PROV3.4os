@@ -63,7 +63,9 @@ interface DashboardTabProps {
   onCloseAllPositions: () => void;
   onOpenDepositModal?: () => void;
   onResetCircuitBreaker?: () => void;
+  onResetCircuitBreaker?: () => void;
   onApplyNewsWeightToML?: (boostPct: number, reason: string) => void;
+  executeTrade?: (symbol: string, direction: 'BUY' | 'SELL') => Promise<any>;
 }
 
 export const DashboardTab: React.FC<DashboardTabProps> = ({
@@ -83,7 +85,8 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
   onCloseAllPositions,
   onOpenDepositModal,
   onResetCircuitBreaker,
-  onApplyNewsWeightToML
+  onApplyNewsWeightToML,
+  executeTrade
 }) => {
   const [isBioModalOpen, setIsBioModalOpen] = useState<boolean>(false);
   const [dashboardSubTab, setDashboardSubTab] = useState<'OVERVIEW' | 'TRADING' | 'RISK' | 'ANALYTICS' | 'INFRASTRUCTURE'>('OVERVIEW');
@@ -468,6 +471,23 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
                 <div className="text-[10px] text-slate-400 font-sans">Score Confiance</div>
               </div>
             </div>
+
+            {/* Execute Trade Button */}
+            {executeTrade && (
+              <div className="pt-2">
+                <button
+                  onClick={() => executeTrade(mlStats.currentSignal.symbol, mlStats.currentSignal.direction as 'BUY'|'SELL')}
+                  className={`w-full py-2.5 rounded-xl font-bold font-mono text-xs uppercase tracking-wider transition-all shadow-md flex items-center justify-center gap-2 ${
+                    mlStats.currentSignal.direction === 'BUY'
+                      ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-900/50'
+                      : 'bg-red-600 hover:bg-red-500 text-white shadow-red-900/50'
+                  }`}
+                >
+                  <Activity className="w-4 h-4" />
+                  Exécuter Vrai Ordre ({mlStats.currentSignal.direction})
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Feature Impact Horizontal Bar Chart (Recharts) for XGBoost + LSTM Ensemble */}

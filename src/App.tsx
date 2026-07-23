@@ -53,132 +53,27 @@ export default function App() {
 
   // MT5 Account State
   const [accountState, setAccountState] = useState<MT5AccountState>({
-    accountNumber: '84920412',
-    broker: 'IC Markets',
-    server: 'ICMarketsSC-Demo',
-    balance: 10000.00,
-    equity: 10240.50,
-    freeMargin: 9680.00,
-    marginLevelPct: 1820.4,
-    unrealizedPnL: 240.50,
-    dailyPnL: 240.50,
-    dailyPnLPct: 2.40,
+    accountNumber: '-',
+    broker: '-',
+    server: '-',
+    balance: 0.00,
+    equity: 0.00,
+    freeMargin: 0.00,
+    marginLevelPct: 0.0,
+    unrealizedPnL: 0.00,
+    dailyPnL: 0.00,
+    dailyPnLPct: 0.00,
     currency: 'USD',
-    isPaperTrading: true,
-    isConnected: true,
-    pingMs: 14
+    isPaperTrading: false,
+    isConnected: false,
+    pingMs: 0
   });
 
   // Active MT5 Positions
-  const [positions, setPositions] = useState<ActivePosition[]>([
-    {
-      ticket: 994201,
-      symbol: 'EURUSD',
-      type: 'BUY',
-      lots: 0.50,
-      openPrice: 1.0850,
-      currentPrice: 1.0878,
-      stopLoss: 1.0820,
-      takeProfit: 1.0920,
-      pnl: 140.00,
-      pnlPct: 1.29,
-      openTime: '10:14:22',
-      magicNumber: 88492,
-      mlConfidence: 84.5,
-      signalReason: 'RSI Bullish Divergence + XGBoost High Probability',
-      tags: ['#Scalp', '#AlgoML']
-    },
-    {
-      ticket: 994205,
-      symbol: 'XAUUSD',
-      type: 'BUY',
-      lots: 0.10,
-      openPrice: 2380.50,
-      currentPrice: 2390.55,
-      stopLoss: 2368.00,
-      takeProfit: 2410.00,
-      pnl: 100.50,
-      pnlPct: 0.42,
-      openTime: '11:02:10',
-      magicNumber: 88492,
-      mlConfidence: 79.2,
-      signalReason: 'LSTM Sequence Pattern Match + Order Book Imbalance',
-      tags: ['#DayTrade', '#Gold']
-    }
-  ]);
+  const [positions, setPositions] = useState<ActivePosition[]>([]);
 
   // Closed MT5 Trades History
-  const [closedTrades, setClosedTrades] = useState<ClosedTrade[]>([
-
-    {
-      ticket: 994180,
-      symbol: 'EURUSD',
-      type: 'BUY',
-      lots: 0.25,
-      openPrice: 1.0820,
-      closePrice: 1.0865,
-      stopLoss: 1.0790,
-      takeProfit: 1.0865,
-      pnl: 112.50,
-      pnlPct: 1.04,
-      openTime: '2026-07-21 08:15:00',
-      closeTime: '2026-07-21 09:42:15',
-      magicNumber: 88492,
-      mlConfidence: 81.0,
-      closeReason: 'TP_HIT'
-    },
-    {
-      ticket: 994181,
-      symbol: 'GBPUSD',
-      type: 'SELL',
-      lots: 0.10,
-      openPrice: 1.2500,
-      closePrice: 1.2480,
-      stopLoss: 1.2550,
-      takeProfit: 1.2400,
-      pnl: 20.00,
-      pnlPct: 0.16,
-      openTime: '2026-07-21 10:00:00',
-      closeTime: '2026-07-21 10:30:00',
-      magicNumber: 88492,
-      mlConfidence: 75.0,
-      closeReason: 'MANUAL'
-    },
-    {
-      ticket: 994182,
-      symbol: 'USDJPY',
-      type: 'BUY',
-      lots: 0.50,
-      openPrice: 150.00,
-      closePrice: 149.50,
-      stopLoss: 149.50,
-      takeProfit: 151.00,
-      pnl: -250.00,
-      pnlPct: -1.66,
-      openTime: '2026-07-21 11:00:00',
-      closeTime: '2026-07-21 11:45:00',
-      magicNumber: 88492,
-      mlConfidence: 60.0,
-      closeReason: 'SL_HIT'
-    },
-    {
-      ticket: 994183,
-      symbol: 'XAUUSD',
-      type: 'BUY',
-      lots: 0.05,
-      openPrice: 2000.00,
-      closePrice: 2010.00,
-      stopLoss: 1990.00,
-      takeProfit: 2020.00,
-      pnl: 50.00,
-      pnlPct: 0.50,
-      openTime: '2026-07-21 12:00:00',
-      closeTime: '2026-07-21 14:00:00',
-      magicNumber: 88492,
-      mlConfidence: 88.0,
-      closeReason: 'MANUAL'
-    }
-  ]);
+  const [closedTrades, setClosedTrades] = useState<ClosedTrade[]>([]);
 
   // ML Model Stats
   const [mlStats, setMlStats] = useState<MLModelStats>({
@@ -231,29 +126,7 @@ export default function App() {
   });
 
   // Log Entries Stream
-  const [logs, setLogs] = useState<LogEntry[]>([
-    {
-      id: '1',
-      timestamp: new Date().toLocaleTimeString(),
-      level: 'INFO',
-      module: 'SYSTEM',
-      message: 'Bot MT5 Android ML initialisé. Connexion au Bridge ZeroMQ réussie (14ms).'
-    },
-    {
-      id: '2',
-      timestamp: new Date().toLocaleTimeString(),
-      level: 'ML_PRED',
-      module: 'ML_ENGINE',
-      message: 'Inférence ONNX effectuée pour EURUSD : Signal BUY (Confiance: 84.5%).'
-    },
-    {
-      id: '3',
-      timestamp: new Date().toLocaleTimeString(),
-      level: 'MT5_EXEC',
-      module: 'MT5_BRIDGE',
-      message: 'Ordre #994201 BUY 0.50 EURUSD exécuté. SL: 1.0820, TP: 1.0920.'
-    }
-  ]);
+  const [logs, setLogs] = useState<LogEntry[]>([]);
 
   // Callback to append logs from connection hook
   const handleAddConnectionLog = useCallback((message: string, level: 'INFO' | 'WARNING' | 'SUCCESS' | 'ERROR' = 'INFO') => {
@@ -300,10 +173,13 @@ export default function App() {
     ]);
   };
 
-  const { forceReconnect, simulateDisconnect } = useMT5Connection(
+  const { forceReconnect, simulateDisconnect, executeTrade, closePosition } = useMT5Connection(
     accountState,
     setAccountState,
     riskConfig,
+    setMlStats,
+    setPositions,
+    setClosedTrades,
     {
       baseDelayMs: 2000,
       maxDelayMs: 30000,
@@ -448,6 +324,8 @@ export default function App() {
             setLogs={setLogs}
             onTriggerCircuitBreaker={handleTriggerCircuitBreaker}
             onResetCircuitBreaker={handleResetCircuitBreaker}
+            executeTrade={executeTrade}
+            closePosition={closePosition}
           />
         ) : (
           <ArchitectureDocView />

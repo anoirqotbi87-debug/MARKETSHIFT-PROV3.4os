@@ -35,6 +35,8 @@ interface MobileSimulatorViewProps {
   onTriggerCircuitBreaker: () => void;
   onResetCircuitBreaker: () => void;
   onApplyNewsWeightToML?: (boostPct: number, reason: string) => void;
+  executeTrade?: (symbol: string, direction: 'BUY' | 'SELL') => Promise<any>;
+  closePosition?: (ticket: number) => Promise<any>;
 }
 
 export const MobileSimulatorView: React.FC<MobileSimulatorViewProps> = ({
@@ -51,7 +53,9 @@ export const MobileSimulatorView: React.FC<MobileSimulatorViewProps> = ({
   setLogs,
   onTriggerCircuitBreaker,
   onResetCircuitBreaker,
-  onApplyNewsWeightToML
+  onApplyNewsWeightToML,
+  executeTrade,
+  closePosition
 }) => {
   const [activeTab, setActiveTab] = useState<ActiveTabSimulator>('dashboard');
   const [showDeviceFrame, setShowDeviceFrame] = useState<boolean>(true);
@@ -158,98 +162,34 @@ export const MobileSimulatorView: React.FC<MobileSimulatorViewProps> = ({
     });
   }, [positions, alerts]);
 
-  const handleClosePosition = (ticket: number) => {
-    const posToClose = positions.find(p => p.ticket === ticket);
-    if (!posToClose) return;
-
-    const closedTimeStr = new Date().toLocaleTimeString();
-
-    // Create closed trade record
-    const closedTradeRecord: ClosedTrade = {
-      ticket: posToClose.ticket,
-      symbol: posToClose.symbol,
-      type: posToClose.type,
-      lots: posToClose.lots,
-      openPrice: posToClose.openPrice,
-      closePrice: posToClose.currentPrice,
-      stopLoss: posToClose.stopLoss,
-      takeProfit: posToClose.takeProfit,
-      pnl: posToClose.pnl,
-      pnlPct: posToClose.pnlPct,
-      openTime: posToClose.openTime,
-      closeTime: closedTimeStr,
-      magicNumber: posToClose.magicNumber,
-      mlConfidence: posToClose.mlConfidence,
-      signalReason: posToClose.signalReason,
-      closeReason: 'CLOSED_MANUAL'
-    };
-
-    setClosedTrades(prev => [closedTradeRecord, ...prev]);
-    setPositions(prev => prev.filter(p => p.ticket !== ticket));
-    setAccountState(prev => ({
-      ...prev,
-      balance: prev.balance + posToClose.pnl,
-      equity: prev.equity + posToClose.pnl,
-      unrealizedPnL: prev.unrealizedPnL - posToClose.pnl
-    }));
-
-    setLogs(prev => [
-      {
-        id: Date.now().toString(),
-        timestamp: closedTimeStr,
-        level: 'MT5_EXEC',
-        module: 'ANDROID_UI',
-        message: `Ordre #${ticket} (${posToClose.symbol}) clôturé manuellement. PnL: $${posToClose.pnl.toFixed(2)}`
-      },
-      ...prev
-    ]);
+  const handleClosePosition = async (ticket: number) => {
+    if (closePosition) {
+      try {
+        await closePosition(ticket);
+        // Optimistic update
+        setPositions(prev => prev.filter(p => p.ticket !== ticket));
+      } catch (e) {
+        console.error("Failed to close position", e);
+      }
+    } else {
+      // Fallback
+      setPositions(prev => prev.filter(p => p.ticket !== ticket));
+    }
   };
 
-  const handleCloseAllPositions = () => {
-    let totalClosedPnL = 0;
-    const closedTimeStr = new Date().toLocaleTimeString();
-    
-    const newClosedRecords: ClosedTrade[] = positions.map(p => {
-      totalClosedPnL += p.pnl;
-      return {
-        ticket: p.ticket,
-        symbol: p.symbol,
-        type: p.type,
-        lots: p.lots,
-        openPrice: p.openPrice,
-        closePrice: p.currentPrice,
-        stopLoss: p.stopLoss,
-        takeProfit: p.takeProfit,
-        pnl: p.pnl,
-        pnlPct: p.pnlPct,
-        openTime: p.openTime,
-        closeTime: closedTimeStr,
-        magicNumber: p.magicNumber,
-        mlConfidence: p.mlConfidence,
-        signalReason: p.signalReason,
-        closeReason: 'CLOSED_MANUAL'
-      };
-    });
-
-    setClosedTrades(prev => [...newClosedRecords, ...prev]);
-    setPositions([]);
-    setAccountState(prev => ({
-      ...prev,
-      balance: prev.balance + totalClosedPnL,
-      equity: prev.equity + totalClosedPnL,
-      unrealizedPnL: 0
-    }));
-
-    setLogs(prev => [
-      {
-        id: Date.now().toString(),
-        timestamp: closedTimeStr,
-        level: 'MT5_EXEC',
-        module: 'ANDROID_UI',
-        message: `Toutes les positions clôturées. PnL cumulé: $${totalClosedPnL.toFixed(2)}`
-      },
-      ...prev
-    ]);
+  const handleCloseAllPositions = async () => {
+    if (closePosition) {
+      for (const pos of positions) {
+        try {
+          await closePosition(pos.ticket);
+        } catch (e) {
+          console.error(`Failed to close position ${pos.ticket}`, e);
+        }
+      }
+      setPositions([]);
+    } else {
+      setPositions([]);
+    }
   };
 
   const handleClearLogs = () => {
@@ -389,6 +329,7 @@ export const MobileSimulatorView: React.FC<MobileSimulatorViewProps> = ({
                 onOpenDepositModal={() => setIsDepositModalOpen(true)}
                 onResetCircuitBreaker={onResetCircuitBreaker}
                 onApplyNewsWeightToML={onApplyNewsWeightToML}
+                executeTrade={executeTrade}
               />
               </div>
             )}

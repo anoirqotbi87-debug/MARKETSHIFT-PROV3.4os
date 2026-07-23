@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, Dispatch, SetStateAction } from 'react';
-import { MT5AccountState, ReconnectionState, MLModelStats } from '../types';
+import { MT5AccountState, ReconnectionState, MLModelStats, ActivePosition, ClosedTrade } from '../types';
 
 interface UseMT5ConnectionOptions {
   baseDelayMs?: number;
@@ -13,6 +13,8 @@ export function useMT5Connection(
   setAccountState: Dispatch<SetStateAction<MT5AccountState>>,
   riskConfig: any,
   setMlStats: Dispatch<SetStateAction<MLModelStats>>,
+  setPositions: Dispatch<SetStateAction<ActivePosition[]>>,
+  setClosedTrades: Dispatch<SetStateAction<ClosedTrade[]>>,
   options: UseMT5ConnectionOptions = {}
 ) {
   const {
@@ -223,6 +225,28 @@ export function useMT5Connection(
           }
           // ------------------------------
           
+          // --- Fetch Positions ---
+          try {
+            const posRes = await fetch(`${ip}/positions`);
+            if (posRes.ok) {
+              const posData = await posRes.json();
+              setPositions(posData);
+            }
+          } catch (e) {
+            console.error("Positions Fetch Error:", e);
+          }
+
+          // --- Fetch History ---
+          try {
+            const histRes = await fetch(`${ip}/history`);
+            if (histRes.ok) {
+              const histData = await histRes.json();
+              setClosedTrades(histData);
+            }
+          } catch (e) {
+            console.error("History Fetch Error:", e);
+          }
+          
         } else {
           const errText = await res.text();
           if (onLogAdd) onLogAdd(`Erreur Local Bridge (${res.status}): ${errText.substring(0, 50)}`, 'ERROR');
@@ -350,9 +374,62 @@ export function useMT5Connection(
     });
   }, [reconnectionState, setAccountState]);
 
+  const executeTrade = async (symbol: string, direction: 'BUY' | 'SELL') => {
+    if (!riskConfig?.useLocalBridge || !riskConfig?.localBridgeIp) return;
+    try {
+      let ip = riskConfig.localBridgeIp;
+      if (!ip.startsWith('http://') && !ip.startsWith('https://')) ip = 'http://' + ip;
+      
+      const res = await fetch(`${ip}/trade`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ symbol, direction })
+      });
+      
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text);
+      }
+      
+      const data = await res.json();
+      if (onLogAdd) onLogAdd(`Trade exécuté : ${direction} ${data.volume} lots sur ${symbol} (Ticket: ${data.ticket})`, 'SUCCESS');
+      return data;
+    } catch (e: any) {
+      if (onLogAdd) onLogAdd(`Erreur exécution trade : ${e.message}`, 'ERROR');
+      throw e;
+    }
+  };
+
+  const closePosition = async (ticket: number) => {
+    if (!riskConfig?.useLocalBridge || !riskConfig?.localBridgeIp) return;
+    try {
+      let ip = riskConfig.localBridgeIp;
+      if (!ip.startsWith('http://') && !ip.startsWith('https://')) ip = 'http://' + ip;
+      
+      const res = await fetch(`${ip}/close`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ticket })
+      });
+      
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text);
+      }
+      
+      if (onLogAdd) onLogAdd(`Position #${ticket} clôturée avec succès.`, 'SUCCESS');
+      return await res.json();
+    } catch (e: any) {
+      if (onLogAdd) onLogAdd(`Erreur clôture position : ${e.message}`, 'ERROR');
+      throw e;
+    }
+  };
+
   return {
     reconnectionState,
     forceReconnect,
-    simulateDisconnect
+    simulateDisconnect,
+    executeTrade,
+    closePosition
   };
 }
