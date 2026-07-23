@@ -297,6 +297,49 @@ export function useMT5Connection(
 
 
 
+  // Synchronize RiskConfig with Python Backend
+  useEffect(() => {
+    if (!riskConfig?.useLocalBridge || !riskConfig?.localBridgeIp) return;
+    const syncSettings = async () => {
+      try {
+        let ip = riskConfig.localBridgeIp;
+        if (!ip.startsWith('http://') && !ip.startsWith('https://')) ip = 'http://' + ip;
+        
+        const payload = {
+          sl_multiplier: riskConfig.atrMultiplierSL || 1.0,
+          tp_multiplier: riskConfig.atrMultiplierTP || 1.5,
+          risk_percent: (riskConfig.maxRiskPerTradePct || 2.0) / 100.0,
+          trailing_stop_active: riskConfig.useTrailingStop ?? true,
+          trailing_stop_multiplier: riskConfig.trailingStopAtr || 1.0
+        };
+
+        const res = await fetch(`${ip}/settings`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        
+        if (!res.ok) {
+          console.error("Failed to sync settings to Python Backend");
+        } else {
+          console.log("Settings synced to Python Backend:", payload);
+        }
+      } catch (e) {
+        console.error("Error syncing settings", e);
+      }
+    };
+    
+    syncSettings();
+  }, [
+    riskConfig?.useLocalBridge, 
+    riskConfig?.localBridgeIp,
+    riskConfig?.atrMultiplierSL,
+    riskConfig?.atrMultiplierTP,
+    riskConfig?.maxRiskPerTradePct,
+    riskConfig?.useTrailingStop,
+    riskConfig?.trailingStopAtr
+  ]);
+
   // Keep reconnectionState synced into accountState.reconnectionState
   useEffect(() => {
     setAccountState(prev => {

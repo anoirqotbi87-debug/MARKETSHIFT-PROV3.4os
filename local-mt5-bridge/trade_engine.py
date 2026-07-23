@@ -9,7 +9,9 @@ class TradeEngine:
     def __init__(self):
         self.logger = logging.getLogger("uvicorn.error")
         self.trailing_stop_active = True
-        self.trailing_step_points = 50 # 5 pips
+        self.trailing_stop_multiplier = 1.0 # default ATR multiplier
+        self.sl_multiplier = 1.0
+        self.tp_multiplier = 1.5
         self.risk_percent = 0.02 # 2% risk
 
     def start_trailing_stop_daemon(self):
@@ -53,8 +55,8 @@ class TradeEngine:
                 
             point = symbol_info.point
             
-            # Dynamic trailing distance = 1.0 * ATR
-            trailing_distance = self._get_current_atr(pos.symbol)
+            # Dynamic trailing distance = trailing_stop_multiplier * ATR
+            trailing_distance = self._get_current_atr(pos.symbol) * self.trailing_stop_multiplier
             
             if pos.type == mt5.POSITION_TYPE_BUY:
                 # If price moved up
@@ -118,10 +120,10 @@ class TradeEngine:
         volume = self.calculate_lot_size(symbol)
         tick = mt5.symbol_info_tick(symbol)
         
-        # ATR based SL/TP (Option A: Aggressive 1.0x ATR for SL, 1.5x ATR for TP)
+        # ATR based SL/TP using instance dynamic multipliers
         atr_value = self._get_current_atr(symbol)
-        sl_distance = atr_value * 1.0
-        tp_distance = atr_value * 1.5
+        sl_distance = atr_value * self.sl_multiplier
+        tp_distance = atr_value * self.tp_multiplier
 
         if direction.upper() == 'BUY':
             order_type = mt5.ORDER_TYPE_BUY

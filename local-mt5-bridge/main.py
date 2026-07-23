@@ -165,6 +165,33 @@ class TradeRequest(BaseModel):
 class CloseRequest(BaseModel):
     ticket: int
 
+class RiskSettings(BaseModel):
+    sl_multiplier: float
+    tp_multiplier: float
+    risk_percent: float
+    trailing_stop_active: bool
+    trailing_stop_multiplier: float
+
+@app.get("/settings")
+def get_settings():
+    return {
+        "sl_multiplier": trade_engine.sl_multiplier,
+        "tp_multiplier": trade_engine.tp_multiplier,
+        "risk_percent": trade_engine.risk_percent,
+        "trailing_stop_active": trade_engine.trailing_stop_active,
+        "trailing_stop_multiplier": trade_engine.trailing_stop_multiplier
+    }
+
+@app.post("/settings")
+def update_settings(settings: RiskSettings):
+    trade_engine.sl_multiplier = settings.sl_multiplier
+    trade_engine.tp_multiplier = settings.tp_multiplier
+    trade_engine.risk_percent = settings.risk_percent
+    trade_engine.trailing_stop_active = settings.trailing_stop_active
+    trade_engine.trailing_stop_multiplier = settings.trailing_stop_multiplier
+    add_log(f"Settings updated from app: Risk={settings.risk_percent*100}% SL={settings.sl_multiplier}x TP={settings.tp_multiplier}x", "INFO")
+    return {"status": "success"}
+
 @app.post("/trade")
 def execute_trade(req: TradeRequest):
     try:
