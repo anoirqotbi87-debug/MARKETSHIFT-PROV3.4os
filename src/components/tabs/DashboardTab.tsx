@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { BiometricAuthModal } from '../BiometricAuthModal';
 import { exportTradesToCSV, exportFullReportToCSV } from '../../utils/csvExport';
+import { TradingViewWidget } from '../TradingViewWidget';
 
 // Date parser helper for trades with time strings or date strings
 function parseTradeDate(timeStr: string): Date {
@@ -89,7 +90,7 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
   executeTrade
 }) => {
   const [isBioModalOpen, setIsBioModalOpen] = useState<boolean>(false);
-  const [dashboardSubTab, setDashboardSubTab] = useState<'OVERVIEW' | 'TRADING' | 'RISK' | 'ANALYTICS' | 'INFRASTRUCTURE'>('OVERVIEW');
+  const [dashboardSubTab, setDashboardSubTab] = useState<'OVERVIEW' | 'TRADING' | 'CHART' | 'RISK' | 'ANALYTICS' | 'INFRASTRUCTURE'>('OVERVIEW');
   const [activeTagFilter, setActiveTagFilter] = useState<string>('ALL');
   const [closedTagFilter, setClosedTagFilter] = useState<string>('ALL');
 
@@ -348,6 +349,18 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
         </button>
 
         <button
+          onClick={() => setDashboardSubTab('CHART')}
+          className={`px-3 py-1.5 rounded-xl font-bold transition-all flex items-center gap-2 whitespace-nowrap border ${
+            dashboardSubTab === 'CHART'
+              ? 'bg-indigo-600 text-white border-indigo-400 shadow-md'
+              : 'bg-slate-950/80 text-slate-400 hover:text-white border-slate-800 hover:bg-slate-900'
+          }`}
+        >
+          <Activity className="w-4 h-4 text-blue-400" />
+          <span>Graphiques</span>
+        </button>
+
+        <button
           onClick={() => setDashboardSubTab('RISK')}
           className={`px-3 py-1.5 rounded-xl font-bold transition-all flex items-center gap-2 whitespace-nowrap border ${
             dashboardSubTab === 'RISK'
@@ -539,6 +552,15 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
 
           {/* Macro Economic Calendar & High-Volatility Auto-Trading Guard */}
           <EconomicCalendar />
+        </div>
+      )}
+
+      {/* CHART SUB-TAB CONTENT */}
+      {dashboardSubTab === 'CHART' && (
+        <div className="space-y-4 animate-in fade-in h-[500px]">
+          <div className="glass-card p-2 rounded-2xl h-full border border-slate-800">
+            <TradingViewWidget symbol={`FX:${mlStats.currentSignal.symbol || 'EURUSD'}`} theme="dark" />
+          </div>
         </div>
       )}
 
