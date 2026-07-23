@@ -103,7 +103,7 @@ export function useMT5Connection(
     let interval: NodeJS.Timeout;
     
     const fetchMetaApi = async () => {
-      if (!riskConfig?.metaApiToken || !riskConfig?.metaApiAccountId) return;
+      if (riskConfig?.useLocalBridge || !riskConfig?.metaApiToken || !riskConfig?.metaApiAccountId) return;
       try {
         // Step 1: Get the account region from the provisioning API
         const provRes = await fetch(`https://mt-provisioning-api-v1.agiliumtrade.agiliumtrade.ai/users/current/accounts/${riskConfig.metaApiAccountId}`, {
@@ -150,7 +150,7 @@ export function useMT5Connection(
       }
     };
 
-    if (riskConfig?.metaApiToken && riskConfig?.metaApiAccountId) {
+    if (!riskConfig?.useLocalBridge && riskConfig?.metaApiToken && riskConfig?.metaApiAccountId) {
       if (onLogAdd) onLogAdd('Connexion à MetaApi initiée...', 'INFO');
       fetchMetaApi();
       interval = setInterval(fetchMetaApi, 5000); // Polling every 5 seconds
@@ -159,11 +159,62 @@ export function useMT5Connection(
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [riskConfig?.metaApiToken, riskConfig?.metaApiAccountId, setAccountState]);
+  }, [riskConfig?.useLocalBridge, riskConfig?.metaApiToken, riskConfig?.metaApiAccountId, setAccountState]);
+
+  // Local Python Bridge Data Fetcher
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    
+    const fetchLocalBridge = async () => {
+      if (!riskConfig?.useLocalBridge || !riskConfig?.localBridgeIp) return;
+      
+      try {
+        let ip = riskConfig.localBridgeIp;
+        // ensure format has http://
+        if (!ip.startsWith('http://') && !ip.startsWith('https://')) {
+          ip = 'http://' + ip;
+        }
+
+        const res = await fetch(`${ip}/account-information`);
+        
+        if (res.ok) {
+          const data = await res.json();
+          setAccountState(prev => ({
+            ...prev,
+            balance: data.balance || prev.balance,
+            equity: data.equity || prev.equity,
+            freeMargin: data.freeMargin || prev.freeMargin,
+            marginLevelPct: data.marginLevel || prev.marginLevelPct,
+            broker: data.broker || prev.broker,
+            server: data.server || prev.server,
+            currency: data.currency || prev.currency,
+            accountNumber: data.login?.toString() || prev.accountNumber,
+            isConnected: true
+          }));
+          if (onLogAdd && !interval) onLogAdd(`Connecté au Local Bridge MT5 avec succès.`, 'SUCCESS');
+        } else {
+          const errText = await res.text();
+          if (onLogAdd) onLogAdd(`Erreur Local Bridge (${res.status}): ${errText.substring(0, 50)}`, 'ERROR');
+        }
+      } catch (e: any) {
+         if (onLogAdd) onLogAdd(`Échec de connexion Local Bridge: ${e.message}`, 'ERROR');
+      }
+    };
+
+    if (riskConfig?.useLocalBridge && riskConfig?.localBridgeIp) {
+      if (onLogAdd) onLogAdd('Connexion au Serveur Local Python initiée...', 'INFO');
+      fetchLocalBridge();
+      interval = setInterval(fetchLocalBridge, 5000); // Polling every 5 seconds
+    }
+    
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [riskConfig?.useLocalBridge, riskConfig?.localBridgeIp, setAccountState]);
 
   // Auto-reconnection loop with exponential backoff (for simulator / base)
   useEffect(() => {
-    if (riskConfig?.metaApiToken) return; // Disable simulator logic if using real API
+    if (riskConfig?.metaApiToken || riskConfig?.useLocalBridge) return; // Disable simulator logic if using real API or local bridge
     
     if (accountState.isConnected) {
       if (timerRef.current) clearInterval(timerRef.current);

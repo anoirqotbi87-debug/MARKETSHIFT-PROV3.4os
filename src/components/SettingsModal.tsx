@@ -214,29 +214,65 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </div>
   
                 <div>
-                  <h3 className="text-sm font-semibold text-slate-300 mb-4 uppercase tracking-wider">Connexion Cloud MetaApi</h3>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">Passerelle MT5</h3>
+                    <div className="flex items-center bg-slate-950 border border-slate-700 rounded-lg overflow-hidden">
+                      <button
+                        onClick={() => setLocalRisk({...localRisk, useLocalBridge: false})}
+                        className={`px-3 py-1 text-xs font-bold transition-colors ${!localRisk.useLocalBridge ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:bg-slate-800'}`}
+                      >
+                        Cloud MetaApi
+                      </button>
+                      <button
+                        onClick={() => setLocalRisk({...localRisk, useLocalBridge: true})}
+                        className={`px-3 py-1 text-xs font-bold transition-colors ${localRisk.useLocalBridge ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:bg-slate-800'}`}
+                      >
+                        Local Python
+                      </button>
+                    </div>
+                  </div>
                   
                   <div className="space-y-4">
-                    <div>
-                      <label className="block text-xs font-bold text-slate-400 mb-1">MetaApi Token (JWT)</label>
-                      <input 
-                        type="password" 
-                        value={localRisk.metaApiToken || ''}
-                        onChange={(e) => setLocalRisk({...localRisk, metaApiToken: e.target.value})}
-                        placeholder="eyJhbGciOi..."
-                        className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 font-mono"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-slate-400 mb-1">Account ID (MT4/MT5)</label>
-                      <input 
-                        type="text" 
-                        value={localRisk.metaApiAccountId || ''}
-                        onChange={(e) => setLocalRisk({...localRisk, metaApiAccountId: e.target.value})}
-                        placeholder="f8c739ea-..."
-                        className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 font-mono"
-                      />
-                    </div>
+                    {!localRisk.useLocalBridge ? (
+                      <>
+                        <div>
+                          <label className="block text-xs font-bold text-slate-400 mb-1">MetaApi Token (JWT)</label>
+                          <input 
+                            type="password" 
+                            value={localRisk.metaApiToken || ''}
+                            onChange={(e) => setLocalRisk({...localRisk, metaApiToken: e.target.value})}
+                            placeholder="eyJhbGciOi..."
+                            className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 font-mono"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-slate-400 mb-1">Account ID (MT4/MT5)</label>
+                          <input 
+                            type="text" 
+                            value={localRisk.metaApiAccountId || ''}
+                            onChange={(e) => setLocalRisk({...localRisk, metaApiAccountId: e.target.value})}
+                            placeholder="f8c739ea-..."
+                            className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 font-mono"
+                          />
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div>
+                          <label className="block text-xs font-bold text-slate-400 mb-1">IP Locale du Serveur Python</label>
+                          <input 
+                            type="text" 
+                            value={localRisk.localBridgeIp || ''}
+                            onChange={(e) => setLocalRisk({...localRisk, localBridgeIp: e.target.value})}
+                            placeholder="ex: 192.168.1.50:8000"
+                            className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 font-mono"
+                          />
+                          <p className="text-[10px] text-slate-500 mt-1">
+                            L'application va se connecter directement à votre PC via le réseau Wi-Fi local.
+                          </p>
+                        </div>
+                      </>
+                    )}
                     
                     <div className="pt-4 mt-2 border-t border-slate-800">
                       <button 

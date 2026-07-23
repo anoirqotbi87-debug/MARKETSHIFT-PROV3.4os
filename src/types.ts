@@ -110,6 +110,8 @@ export interface RiskConfig {
   minNewsSentimentScore?: number; // range -1.0 to +1.0 (e.g. -0.60)
   metaApiToken?: string;
   metaApiAccountId?: string;
+  useLocalBridge?: boolean;
+  localBridgeIp?: string;
 }
 
 export interface LogEntry {
