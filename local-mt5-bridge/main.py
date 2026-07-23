@@ -9,8 +9,8 @@ app = FastAPI(title="Local MT5 Bridge for MarketShift Pro")
 # Allow CORS for the React mobile app
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allows all origins
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
