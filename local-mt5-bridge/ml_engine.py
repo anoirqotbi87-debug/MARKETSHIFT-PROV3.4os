@@ -10,6 +10,9 @@ from ta.trend import MACD, EMAIndicator
 from ta.volatility import BollingerBands, AverageTrueRange
 import logging
 import threading
+import os
+import pickle
+import time
 
 class MLEngine:
     def __init__(self):
@@ -19,6 +22,9 @@ class MLEngine:
         self.supported_symbols = ["EURUSD", "GBPUSD", "XAUUSD", "USDJPY", "BTCUSD", "US30"]
         self.timeframe = mt5.TIMEFRAME_M1
         self.logger = logging.getLogger("uvicorn.error")
+        
+        self.models_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models")
+        os.makedirs(self.models_dir, exist_ok=True)
 
     def _get_data(self, symbol, timeframe, num_candles=2000):
         rates = mt5.copy_rates_from_pos(symbol, timeframe, 0, num_candles)
@@ -108,6 +114,23 @@ class MLEngine:
         self.logger.info("Background training complete.")
 
     def train_symbol(self, symbol):
+        model_path = os.path.join(self.models_dir, f"{symbol}_model.pkl")
+        scaler_path = os.path.join(self.models_dir, f"{symbol}_scaler.pkl")
+        
+        # Check if we have a saved model that is less than 7 days old
+        if os.path.exists(model_path) and os.path.exists(scaler_path):
+            file_age_days = (time.time() - os.path.getmtime(model_path)) / (24 * 3600)
+            if file_age_days < 7.0:
+                try:
+                    with open(model_path, 'rb') as f:
+                        self.models[symbol] = pickle.load(f)
+                    with open(scaler_path, 'rb') as f:
+                        self.scalers[symbol] = pickle.load(f)
+                    self.logger.info(f"Loaded existing model for {symbol} (Age: {file_age_days:.1f} days). Skipping training.")
+                    return
+                except Exception as e:
+                    self.logger.warning(f"Failed to load cached model for {symbol}: {e}. Retraining...")
+
         self.logger.info(f"Training ML models for {symbol} (M1 Scalping with SMC)...")
         df = self._get_data(symbol, self.timeframe, num_candles=2000)
         if df is None:
@@ -143,6 +166,16 @@ class MLEngine:
         
         self.models[symbol] = ensemble
         self.scalers[symbol] = scaler
+        
+        # Save to disk for next time
+        try:
+            with open(model_path, 'wb') as f:
+                pickle.dump(ensemble, f)
+            with open(scaler_path, 'wb') as f:
+                pickle.dump(scaler, f)
+            self.logger.info(f"Saved new model and scaler for {symbol} to disk.")
+        except Exception as e:
+            self.logger.error(f"Could not save model to disk: {e}")
         
         score = ensemble.score(X_scaled, y)
         self.logger.info(f"Successfully trained {symbol}. Accuracy on train set: {score:.2f}")
