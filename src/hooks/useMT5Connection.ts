@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, Dispatch, SetStateAction } from 'react';
-import { MT5AccountState, ReconnectionState, MLModelStats, ActivePosition, ClosedTrade } from '../types';
+import { MT5AccountState, ReconnectionState, MLModelStats, ActivePosition, ClosedTrade, LogEntry } from '../types';
 
 interface UseMT5ConnectionOptions {
   baseDelayMs?: number;
