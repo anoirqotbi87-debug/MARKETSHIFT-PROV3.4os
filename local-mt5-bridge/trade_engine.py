@@ -2,6 +2,8 @@ import MetaTrader5 as mt5
 import threading
 import time
 import logging
+import pandas as pd
+from ta.volatility import AverageTrueRange
 
 class TradeEngine:
     def __init__(self):
@@ -22,6 +24,23 @@ class TradeEngine:
         thread.start()
         self.logger.info("Trailing stop daemon started.")
 
+    def _get_current_atr(self, symbol, fallback_points=100):
+        rates = mt5.copy_rates_from_pos(symbol, mt5.TIMEFRAME_M1, 0, 15)
+        if rates is None or len(rates) == 0:
+            point = mt5.symbol_info(symbol).point
+            return fallback_points * point
+            
+        df = pd.DataFrame(rates)
+        atr_indicator = AverageTrueRange(df['high'], df['low'], df['close'], window=14)
+        atr_value = atr_indicator.average_true_range().iloc[-1]
+        
+        # fallback if NaN
+        if pd.isna(atr_value) or atr_value == 0:
+            point = mt5.symbol_info(symbol).point
+            return fallback_points * point
+            
+        return atr_value
+
     def _process_trailing_stops(self):
         positions = mt5.positions_get()
         if positions is None:
@@ -34,12 +53,14 @@ class TradeEngine:
                 
             point = symbol_info.point
             
-            # Simple trailing stop logic
+            # Dynamic trailing distance = 1.0 * ATR
+            trailing_distance = self._get_current_atr(pos.symbol)
+            
             if pos.type == mt5.POSITION_TYPE_BUY:
                 # If price moved up
-                new_sl = pos.price_current - (self.trailing_step_points * point)
+                new_sl = pos.price_current - trailing_distance
                 # If current SL is lower than new calculated SL, move it up
-                if pos.sl < new_sl and pos.price_current > pos.price_open + (self.trailing_step_points * point):
+                if pos.sl < new_sl and pos.price_current > pos.price_open + trailing_distance:
                     request = {
                         "action": mt5.TRADE_ACTION_SLTP,
                         "position": pos.ticket,
@@ -50,8 +71,8 @@ class TradeEngine:
                     mt5.order_send(request)
                     
             elif pos.type == mt5.POSITION_TYPE_SELL:
-                new_sl = pos.price_current + (self.trailing_step_points * point)
-                if (pos.sl > new_sl or pos.sl == 0.0) and pos.price_current < pos.price_open - (self.trailing_step_points * point):
+                new_sl = pos.price_current + trailing_distance
+                if (pos.sl > new_sl or pos.sl == 0.0) and pos.price_current < pos.price_open - trailing_distance:
                     request = {
                         "action": mt5.TRADE_ACTION_SLTP,
                         "position": pos.ticket,
@@ -95,24 +116,23 @@ class TradeEngine:
                 raise ValueError(f"Symbol {symbol} not found")
 
         volume = self.calculate_lot_size(symbol)
-        point = symbol_info.point
         tick = mt5.symbol_info_tick(symbol)
         
-        # Example ATR based SL/TP - we will use fixed points for simplicity 
-        # 10 pips SL, 20 pips TP
-        sl_points = 100
-        tp_points = 200
+        # ATR based SL/TP (Option A: Aggressive 1.0x ATR for SL, 1.5x ATR for TP)
+        atr_value = self._get_current_atr(symbol)
+        sl_distance = atr_value * 1.0
+        tp_distance = atr_value * 1.5
 
         if direction.upper() == 'BUY':
             order_type = mt5.ORDER_TYPE_BUY
             price = tick.ask
-            sl = price - sl_points * point
-            tp = price + tp_points * point
+            sl = price - sl_distance
+            tp = price + tp_distance
         else:
             order_type = mt5.ORDER_TYPE_SELL
             price = tick.bid
-            sl = price + sl_points * point
-            tp = price - tp_points * point
+            sl = price + sl_distance
+            tp = price - tp_distance
 
         request = {
             "action": mt5.TRADE_ACTION_DEAL,
