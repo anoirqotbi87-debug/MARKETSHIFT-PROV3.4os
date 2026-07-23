@@ -17,7 +17,7 @@ import { PushNotificationManager } from './PushNotificationManager';
 import { PriceAlertToastOverlay, ActiveToastAlert } from './PriceAlertToastOverlay';
 
 import { 
-  LayoutDashboard, Cpu, Server, Shield, BarChart, Terminal, Sparkles, Smartphone, Wifi, Battery, Signal, Download, Wallet
+  LayoutDashboard, Cpu, Server, Shield, BarChart, Terminal, Sparkles, Smartphone, Wifi, Battery, Signal, Download, Wallet, Settings, Home, Activity
 } from 'lucide-react';
 
 interface MobileSimulatorViewProps {
@@ -196,14 +196,12 @@ export const MobileSimulatorView: React.FC<MobileSimulatorViewProps> = ({
     setLogs([]);
   };
 
-  const tabsNav = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'ml_engine', label: 'Moteur ML', icon: Cpu },
-    { id: 'mt5_bridge', label: 'Bridge MT5', icon: Server },
+  const bottomNav = [
+    { id: 'dashboard', label: 'Accueil', icon: Home },
+    { id: 'ml_engine', label: 'IA Signals', icon: Activity },
     { id: 'risk_security', label: 'Risque', icon: Shield },
-    { id: 'backtester', label: 'Backtest', icon: BarChart },
-    { id: 'terminal_logs', label: 'Logs', icon: Terminal },
-    { id: 'ai_assistant', label: 'AI Gemini', icon: Sparkles },
+    { id: 'ai_assistant', label: 'Assistant', icon: Sparkles },
+    { id: 'mt5_bridge', label: 'Réglages', icon: Settings },
   ];
 
   return (
@@ -284,30 +282,8 @@ export const MobileSimulatorView: React.FC<MobileSimulatorViewProps> = ({
           {/* Header Daily Profit Goal Progress Bar */}
           <DailyProfitProgressBar accountState={accountState} />
 
-          {/* Tab Navigation Scrollable Bar */}
-          <div className="bg-slate-900/80 border-b border-slate-800 px-2 py-2 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
-            {tabsNav.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id as ActiveTabSimulator)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold shrink-0 transition-all ${
-                    isActive
-                      ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
-                  }`}
-                >
-                  <Icon className="w-3.5 h-3.5" />
-                  <span>{tab.label}</span>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Active Tab Screen Content */}
-          <div className="p-3 min-h-[480px]">
+          {/* Active Tab Screen Content - Expanded Height to accommodate Bottom Bar */}
+          <div className="p-3 pb-24 min-h-[550px] relative overflow-y-auto no-scrollbar">
             {activeTab === 'dashboard' && (
               <div className="space-y-3">
                 <ClosedTradesChart closedTrades={closedTrades} />
@@ -363,6 +339,34 @@ export const MobileSimulatorView: React.FC<MobileSimulatorViewProps> = ({
             {activeTab === 'ai_assistant' && (
               <AIAssistantTab />
             )}
+          </div>
+
+          {/* 2026 Bottom Navigation Bar */}
+          <div className="absolute bottom-6 left-0 right-0 px-4 z-50">
+            <div className="bg-slate-900/90 backdrop-blur-xl border border-slate-700/50 rounded-2xl flex items-center justify-between px-2 py-2 shadow-2xl shadow-indigo-900/20">
+              {bottomNav.map((tab) => {
+                const Icon = tab.icon;
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id as ActiveTabSimulator)}
+                    className={`flex flex-col items-center gap-1 p-2 rounded-xl transition-all min-w-[64px] ${
+                      isActive
+                        ? 'text-indigo-400'
+                        : 'text-slate-500 hover:text-slate-300'
+                    }`}
+                  >
+                    <div className={`p-1.5 rounded-xl transition-all ${isActive ? 'bg-indigo-600/20' : 'bg-transparent'}`}>
+                      <Icon className={`w-5 h-5 ${isActive ? 'scale-110 drop-shadow-md' : 'scale-100'}`} />
+                    </div>
+                    <span className={`text-[9px] font-semibold tracking-wide ${isActive ? 'font-bold' : ''}`}>
+                      {tab.label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {/* Smartphone Home Bar if frame active */}

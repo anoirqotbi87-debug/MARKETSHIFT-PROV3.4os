@@ -39,6 +39,86 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+
+  /* Segmented Control (iOS style) */
+  .segmented-control {
+    background: rgba(30, 41, 59, 0.6);
+    backdrop-filter: blur(8px);
+    border-radius: 9999px;
+    padding: 4px;
+    display: inline-flex;
+    position: relative;
+    border: 1px solid rgba(148, 163, 184, 0.1);
+  }
+
+  .segmented-control-btn {
+    flex: 1;
+    text-align: center;
+    border-radius: 9999px;
+    padding: 6px 16px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #94a3b8;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    z-index: 10;
+  }
+
+  .segmented-control-btn.active {
+    color: #ffffff;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+  }
+
+  .segmented-indicator {
+    position: absolute;
+    top: 4px;
+    bottom: 4px;
+    border-radius: 9999px;
+    background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%);
+    box-shadow: 0 2px 8px rgba(79, 70, 229, 0.4);
+    z-index: 1;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Modern Selectbox */
+  .modern-select {
+    appearance: none;
+    background-color: rgba(15, 23, 42, 0.8);
+    border: 1px solid rgba(51, 65, 85, 0.6);
+    border-radius: 12px;
+    color: #f8fafc;
+    padding: 8px 32px 8px 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 16px;
+    transition: all 0.2s ease;
+  }
+  
+  .modern-select:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+  }
+
+  .modern-select option {
+    background-color: #0f172a;
+    color: #f8fafc;
+  }
+
+  /* Hero Balance Typography */
+  .hero-balance {
+    font-size: 2.5rem;
+    font-weight: 900;
+    letter-spacing: -0.05em;
+    background: linear-gradient(180deg, #ffffff 0%, #94a3b8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0px 4px 8px rgba(0,0,0,0.5));
+  }
 }
 
 body {

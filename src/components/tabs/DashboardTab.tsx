@@ -265,136 +265,84 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
         actionLabel="Réarmer Coupe-Circuit"
       />
 
-      {/* Account Overview Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 font-mono">
-        <div className="glass-card glass-card-hover p-3 rounded-2xl">
-          <div className="text-[11px] text-slate-400 font-sans font-medium">Équité Totale</div>
-          <div className="text-base font-bold text-white mt-0.5">
-            ${accountState.equity.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-          </div>
-          <div className="text-[10px] text-emerald-400 font-semibold flex items-center gap-0.5 mt-0.5">
-            <TrendingUp className="w-3 h-3" />
-            +${accountState.dailyPnL} ({accountState.dailyPnLPct}%)
-          </div>
+      {/* Hero Balance Section (2026 UI Redesign) */}
+      <div className="flex flex-col items-center justify-center py-6 glass-card rounded-3xl relative overflow-hidden">
+        {/* Subtle glowing background effect */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-32 bg-indigo-600/20 blur-3xl rounded-full pointer-events-none" />
+        
+        <div className="text-[11px] text-slate-400 font-sans font-medium uppercase tracking-widest mb-1">
+          Solde du Portefeuille
+        </div>
+        
+        <div className="hero-balance mb-2 flex items-center gap-1">
+          <span className="text-2xl text-slate-500 font-normal">$</span>
+          {accountState.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+        </div>
+        
+        <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold font-mono shadow-sm ${
+          accountState.dailyPnL >= 0 
+            ? 'bg-emerald-950/60 text-emerald-400 border border-emerald-800/50' 
+            : 'bg-red-950/60 text-red-400 border border-red-800/50'
+        }`}>
+          {accountState.dailyPnL >= 0 ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
+          {accountState.dailyPnL >= 0 ? '+' : ''}${accountState.dailyPnL.toFixed(2)} ({accountState.dailyPnLPct}%) Aujourd'hui
         </div>
 
-        <div className="glass-card glass-card-hover p-3 rounded-2xl relative">
-          <div className="flex items-center justify-between text-[11px] text-slate-400 font-sans font-medium">
-            <span>Solde Compte</span>
-            {onOpenDepositModal && (
-              <button
-                onClick={onOpenDepositModal}
-                className="text-[9px] font-mono font-bold text-emerald-300 hover:text-white bg-emerald-950/90 px-1.5 py-0.5 rounded-lg border border-emerald-700/80 flex items-center gap-1 transition-all shadow-sm"
-                title="Dépôt / Retrait Crypto avec QR Code"
-              >
-                <QrCode className="w-2.5 h-2.5 text-emerald-400" />
-                <span>Dépôt QR</span>
-              </button>
-            )}
+        {/* Action Buttons Row */}
+        <div className="flex items-center gap-4 mt-6">
+          {onOpenDepositModal && (
+            <button
+              onClick={onOpenDepositModal}
+              className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 rounded-2xl font-bold text-xs shadow-lg shadow-indigo-600/20 transition-all"
+            >
+              <Wallet className="w-4 h-4" />
+              <span>Dépôt / Retrait</span>
+            </button>
+          )}
+          <div className="flex flex-col items-center">
+            <span className="text-[10px] text-slate-500 font-sans">Marge Libre</span>
+            <span className="text-xs font-bold text-slate-300 font-mono">${accountState.freeMargin.toFixed(0)}</span>
           </div>
-          <div className="text-base font-bold text-slate-200 mt-0.5">
-            ${accountState.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-          </div>
-          <div className="text-[10px] text-slate-400 mt-0.5">
-            Libre: ${accountState.freeMargin.toFixed(0)}
-          </div>
-        </div>
-
-        <div className="glass-card glass-card-hover p-3 rounded-2xl">
-          <div className="text-[11px] text-slate-400 font-sans font-medium">PnL Latent</div>
-          <div className={`text-base font-bold mt-0.5 ${accountState.unrealizedPnL >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-            {accountState.unrealizedPnL >= 0 ? '+' : ''}${accountState.unrealizedPnL.toFixed(2)}
-          </div>
-          <div className="text-[10px] text-slate-400 font-sans mt-0.5">
-            {positions.length} position(s)
-          </div>
-        </div>
-
-        <div className="glass-card glass-card-hover p-3 rounded-2xl">
-          <div className="text-[11px] text-slate-400 font-sans font-medium">Niveau de Marge</div>
-          <div className="text-base font-bold text-indigo-400 mt-0.5">
-            {accountState.marginLevelPct}%
-          </div>
-          <div className="text-[10px] text-slate-400 flex items-center gap-1 font-sans mt-0.5">
-            <ShieldCheck className="w-3 h-3 text-emerald-400" />
-            Sain (&gt;500%)
+          <div className="flex flex-col items-center">
+            <span className="text-[10px] text-slate-500 font-sans">Niveau</span>
+            <span className="text-xs font-bold text-indigo-400 font-mono">{accountState.marginLevelPct}%</span>
           </div>
         </div>
       </div>
 
-      {/* Dashboard Sub-Tabs Navigation Bar */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 font-mono text-xs border-b border-slate-800/80 no-scrollbar">
-        <button
-          onClick={() => setDashboardSubTab('OVERVIEW')}
-          className={`px-3 py-1.5 rounded-xl font-bold transition-all flex items-center gap-2 whitespace-nowrap border ${
-            dashboardSubTab === 'OVERVIEW'
-              ? 'bg-indigo-600 text-white border-indigo-400 shadow-md'
-              : 'bg-slate-950/80 text-slate-400 hover:text-white border-slate-800 hover:bg-slate-900'
-          }`}
-        >
-          <BarChart2 className="w-4 h-4 text-emerald-400" />
-          <span>Overview</span>
-        </button>
-
-        <button
-          onClick={() => setDashboardSubTab('TRADING')}
-          className={`px-3 py-1.5 rounded-xl font-bold transition-all flex items-center gap-2 whitespace-nowrap border ${
-            dashboardSubTab === 'TRADING'
-              ? 'bg-indigo-600 text-white border-indigo-400 shadow-md'
-              : 'bg-slate-950/80 text-slate-400 hover:text-white border-slate-800 hover:bg-slate-900'
-          }`}
-        >
-          <History className="w-4 h-4 text-purple-400" />
-          <span>Trading</span>
-        </button>
-
-        <button
-          onClick={() => setDashboardSubTab('CHART')}
-          className={`px-3 py-1.5 rounded-xl font-bold transition-all flex items-center gap-2 whitespace-nowrap border ${
-            dashboardSubTab === 'CHART'
-              ? 'bg-indigo-600 text-white border-indigo-400 shadow-md'
-              : 'bg-slate-950/80 text-slate-400 hover:text-white border-slate-800 hover:bg-slate-900'
-          }`}
-        >
-          <Activity className="w-4 h-4 text-blue-400" />
-          <span>Graphiques</span>
-        </button>
-
-        <button
-          onClick={() => setDashboardSubTab('RISK')}
-          className={`px-3 py-1.5 rounded-xl font-bold transition-all flex items-center gap-2 whitespace-nowrap border ${
-            dashboardSubTab === 'RISK'
-              ? 'bg-indigo-600 text-white border-indigo-400 shadow-md'
-              : 'bg-slate-950/80 text-slate-400 hover:text-white border-slate-800 hover:bg-slate-900'
-          }`}
-        >
-          <PieChart className="w-4 h-4 text-cyan-400" />
-          <span>Risk</span>
-        </button>
-
-        <button
-          onClick={() => setDashboardSubTab('ANALYTICS')}
-          className={`px-3 py-1.5 rounded-xl font-bold transition-all flex items-center gap-2 whitespace-nowrap border ${
-            dashboardSubTab === 'ANALYTICS'
-              ? 'bg-indigo-600 text-white border-indigo-400 shadow-md'
-              : 'bg-slate-950/80 text-slate-400 hover:text-white border-slate-800 hover:bg-slate-900'
-          }`}
-        >
-          <Brain className="w-4 h-4 text-indigo-300" />
-          <span>Analytics</span>
-        </button>
-
-        <button
-          onClick={() => setDashboardSubTab('INFRASTRUCTURE')}
-          className={`px-3 py-1.5 rounded-xl font-bold transition-all flex items-center gap-2 whitespace-nowrap border ${
-            dashboardSubTab === 'INFRASTRUCTURE'
-              ? 'bg-indigo-600 text-white border-indigo-400 shadow-md'
-              : 'bg-slate-950/80 text-slate-400 hover:text-white border-slate-800 hover:bg-slate-900'
-          }`}
-        >
-          <Server className="w-4 h-4 text-emerald-400" />
-          <span>Infrastructure</span>
-        </button>
+      {/* Modern iOS-Style Segmented Control for Sub-Tabs */}
+      <div className="flex justify-center w-full mt-2 mb-4">
+        <div className="segmented-control w-full max-w-sm">
+          <div 
+            className="segmented-indicator"
+            style={{ 
+              width: '33.33%', 
+              transform: `translateX(${
+                dashboardSubTab === 'OVERVIEW' ? '0%' : 
+                dashboardSubTab === 'CHART' ? '100%' : 
+                dashboardSubTab === 'TRADING' ? '200%' : '0%'
+              })`
+            }}
+          />
+          <button
+            onClick={() => setDashboardSubTab('OVERVIEW')}
+            className={`segmented-control-btn ${dashboardSubTab === 'OVERVIEW' ? 'active' : ''}`}
+          >
+            Résumé
+          </button>
+          <button
+            onClick={() => setDashboardSubTab('CHART')}
+            className={`segmented-control-btn ${dashboardSubTab === 'CHART' ? 'active' : ''}`}
+          >
+            Graphique
+          </button>
+          <button
+            onClick={() => setDashboardSubTab('TRADING')}
+            className={`segmented-control-btn ${dashboardSubTab === 'TRADING' ? 'active' : ''}`}
+          >
+            Historique
+          </button>
+        </div>
       </div>
 
       {/* 1. OVERVIEW SUB-TAB CONTENT */}
@@ -601,34 +549,24 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
           </div>
         </div>
 
-        {/* Tag Filter Toolbar for Active Positions */}
-        {positions.length > 0 && (
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-[10px] font-mono">
-            <span className="text-slate-400 flex items-center gap-1 text-[10px]">
-              <Filter className="w-3 h-3 text-indigo-400" />
-              <span>Filtre Tag :</span>
+        {/* Modern Native Selectbox for Active Tags */}
+        {positions.length > 0 && allActiveTags.length > 0 && (
+          <div className="flex items-center gap-2 pb-1">
+            <span className="text-slate-400 text-[10px] font-mono flex items-center gap-1">
+              <Filter className="w-3 h-3 text-indigo-400" /> Filtrer:
             </span>
-            <button
-              onClick={() => setActiveTagFilter('ALL')}
-              className={`px-2 py-0.5 rounded-lg font-bold transition-all ${
-                activeTagFilter === 'ALL'
-                  ? 'bg-indigo-600 text-white shadow-sm'
-                  : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
-              }`}
+            <select
+              value={activeTagFilter}
+              onChange={(e) => setActiveTagFilter(e.target.value)}
+              className="modern-select flex-1"
             >
-              TOUS ({positions.length})
-            </button>
-            {allActiveTags.map(tag => {
-              const count = positions.filter(p => p.tags?.includes(tag)).length;
-              return (
-                <TradeTagPill
-                  key={tag}
-                  tag={`${tag} (${count})`}
-                  isActive={activeTagFilter === tag}
-                  onClick={() => setActiveTagFilter(activeTagFilter === tag ? 'ALL' : tag)}
-                />
-              );
-            })}
+              <option value="ALL">Tous les tags ({positions.length})</option>
+              {allActiveTags.map(tag => (
+                <option key={tag} value={tag}>
+                  {tag} ({positions.filter(p => p.tags?.includes(tag)).length})
+                </option>
+              ))}
+            </select>
           </div>
         )}
 
@@ -817,34 +755,24 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
             </div>
           )}
 
-          {/* Tag Filter Row */}
+          {/* Modern Native Selectbox for Closed Tags */}
           {closedTrades.length > 0 && allClosedTags.length > 0 && (
-            <div className="pt-2 border-t border-slate-800/80 flex items-center gap-1.5 overflow-x-auto text-[10px] font-mono">
-              <span className="text-slate-400 flex items-center gap-1 shrink-0">
-                <Filter className="w-3 h-3 text-indigo-400" />
-                <span>Tag:</span>
+            <div className="pt-2 border-t border-slate-800/80 flex items-center gap-2">
+              <span className="text-slate-400 text-[10px] font-mono flex items-center gap-1">
+                <Filter className="w-3 h-3 text-indigo-400" /> Tag:
               </span>
-              <button
-                onClick={() => setClosedTagFilter('ALL')}
-                className={`px-2 py-0.5 rounded-lg font-bold transition-all ${
-                  closedTagFilter === 'ALL'
-                    ? 'bg-indigo-600 text-white'
-                    : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
-                }`}
+              <select
+                value={closedTagFilter}
+                onChange={(e) => setClosedTagFilter(e.target.value)}
+                className="modern-select flex-1"
               >
-                TOUS ({closedTrades.length})
-              </button>
-              {allClosedTags.map(tag => {
-                const count = closedTrades.filter(t => t.tags?.includes(tag)).length;
-                return (
-                  <TradeTagPill
-                    key={tag}
-                    tag={`${tag} (${count})`}
-                    isActive={closedTagFilter === tag}
-                    onClick={() => setClosedTagFilter(closedTagFilter === tag ? 'ALL' : tag)}
-                  />
-                );
-              })}
+                <option value="ALL">Tous les tags ({closedTrades.length})</option>
+                {allClosedTags.map(tag => (
+                  <option key={tag} value={tag}>
+                    {tag} ({closedTrades.filter(t => t.tags?.includes(tag)).length})
+                  </option>
+                ))}
+              </select>
             </div>
           )}
 
