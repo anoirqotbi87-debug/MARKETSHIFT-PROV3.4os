@@ -20,7 +20,7 @@ import {
   LayoutDashboard, Cpu, Server, Shield, BarChart, Terminal, Sparkles, Smartphone, Wifi, Battery, Signal, Download, Wallet, Settings, Home, Activity
 } from 'lucide-react';
 
-interface MobileSimulatorViewProps {
+interface MainAppViewProps {
   accountState: MT5AccountState;
   setAccountState: React.Dispatch<React.SetStateAction<MT5AccountState>>;
   positions: ActivePosition[];
@@ -39,7 +39,7 @@ interface MobileSimulatorViewProps {
   closePosition?: (ticket: number) => Promise<any>;
 }
 
-export const MobileSimulatorView: React.FC<MobileSimulatorViewProps> = ({
+export const MainAppView: React.FC<MainAppViewProps> = ({
   accountState,
   setAccountState,
   positions,
@@ -58,43 +58,11 @@ export const MobileSimulatorView: React.FC<MobileSimulatorViewProps> = ({
   closePosition
 }) => {
   const [activeTab, setActiveTab] = useState<ActiveTabSimulator>('dashboard');
-  const [showDeviceFrame, setShowDeviceFrame] = useState<boolean>(true);
   const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(false);
   const [isDepositModalOpen, setIsDepositModalOpen] = useState<boolean>(false);
 
-  // Price Alerts State
-  const [alerts, setAlerts] = useState<PriceAlert[]>([
-    {
-      id: 'alert-1',
-      symbol: 'EURUSD',
-      condition: 'ABOVE',
-      targetPrice: 1.0890,
-      note: 'Résistance H4 Majeure',
-      enabled: true,
-      isTriggered: false,
-      createdAt: '10:00:00'
-    },
-    {
-      id: 'alert-2',
-      symbol: 'XAUUSD',
-      condition: 'ABOVE',
-      targetPrice: 2400.00,
-      note: 'Seuil Psychologique $2,400',
-      enabled: true,
-      isTriggered: false,
-      createdAt: '10:15:00'
-    },
-    {
-      id: 'alert-3',
-      symbol: 'BTCUSD',
-      condition: 'BELOW',
-      targetPrice: 63500.00,
-      note: 'Support Liquidation Longs',
-      enabled: true,
-      isTriggered: false,
-      createdAt: '10:30:00'
-    }
-  ]);
+  // Price Alerts State (Empty by default in production)
+  const [alerts, setAlerts] = useState<PriceAlert[]>([]);
 
   // Active Toast Notifications Overlay
   const [activeToasts, setActiveToasts] = useState<ActiveToastAlert[]>([]);
@@ -200,49 +168,19 @@ export const MobileSimulatorView: React.FC<MobileSimulatorViewProps> = ({
     { id: 'dashboard', label: 'Accueil', icon: Home },
     { id: 'ml_engine', label: 'IA Signals', icon: Activity },
     { id: 'risk_security', label: 'Risque', icon: Shield },
-    { id: 'ai_assistant', label: 'Assistant', icon: Sparkles },
+    { id: 'terminal_logs', label: 'Logs & Term', icon: Terminal },
     { id: 'mt5_bridge', label: 'Réglages', icon: Settings },
   ];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div className="w-full h-full min-h-screen pb-20">
       
       {/* Toast Notification Overlay for Price Alerts */}
       <PriceAlertToastOverlay toasts={activeToasts} onDismiss={handleDismissToast} />
       
-      {/* Top Controller Options */}
-      <div className="flex items-center justify-between mb-6 glass-card p-3.5 rounded-2xl">
-        <div className="flex items-center gap-2.5 text-xs font-semibold text-slate-300">
-          <Smartphone className="w-4 h-4 text-indigo-400" />
-          <span className="uppercase tracking-wider font-mono text-[11px]">Simulateur Android MarketShift Pro Mobile-First</span>
-        </div>
-
-        <button
-          onClick={() => setShowDeviceFrame(!showDeviceFrame)}
-          className="px-3.5 py-1.5 bg-indigo-950/80 hover:bg-indigo-900/80 text-indigo-300 rounded-xl text-xs font-mono font-bold border border-indigo-700/50 transition-all shadow-sm"
-        >
-          {showDeviceFrame ? 'MASQUER CADRE TÉLÉPHONE' : 'AFFICHER CADRE TÉLÉPHONE'}
-        </button>
-      </div>
-
       {/* Main Container */}
-      <div className="flex justify-center">
-        <div className={`w-full transition-all relative ${
-          showDeviceFrame ? 'max-w-md bg-slate-950 android-bezel p-1.5 my-2' : 'max-w-4xl bg-slate-950/90 glass-card rounded-2xl p-4'
-        }`}>
-          
-          {/* Smartphone Top Notch & Status Bar if frame active */}
-          {showDeviceFrame && (
-            <div className="pt-2 px-4 pb-2 flex items-center justify-between text-[11px] text-slate-400 border-b border-slate-800/80">
-              <span className="font-semibold text-white font-mono">09:41</span>
-              <div className="w-20 h-3.5 bg-slate-900 rounded-full mx-auto border border-slate-800" />
-              <div className="flex items-center gap-1.5 text-slate-300">
-                <Signal className="w-3 h-3 text-indigo-400" />
-                <Wifi className="w-3 h-3 text-indigo-400" />
-                <Battery className="w-3.5 h-3.5 text-emerald-400" />
-              </div>
-            </div>
-          )}
+      <div className="flex justify-center w-full">
+        <div className="w-full max-w-7xl relative bg-slate-950">
 
           {/* App Bar inside Mobile App */}
           <div className="p-3 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between gap-2">
@@ -342,39 +280,34 @@ export const MobileSimulatorView: React.FC<MobileSimulatorViewProps> = ({
           </div>
 
           {/* 2026 Bottom Navigation Bar */}
-          <div className="absolute bottom-6 left-0 right-0 px-4 z-50">
-            <div className="bg-slate-900/90 backdrop-blur-xl border border-slate-700/50 rounded-2xl flex items-center justify-between px-2 py-2 shadow-2xl shadow-indigo-900/20">
-              {bottomNav.map((tab) => {
-                const Icon = tab.icon;
-                const isActive = activeTab === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id as ActiveTabSimulator)}
-                    className={`flex flex-col items-center gap-1 p-2 rounded-xl transition-all min-w-[64px] ${
-                      isActive
-                        ? 'text-indigo-400'
-                        : 'text-slate-500 hover:text-slate-300'
-                    }`}
-                  >
-                    <div className={`p-1.5 rounded-xl transition-all ${isActive ? 'bg-indigo-600/20' : 'bg-transparent'}`}>
-                      <Icon className={`w-5 h-5 ${isActive ? 'scale-110 drop-shadow-md' : 'scale-100'}`} />
-                    </div>
-                    <span className={`text-[9px] font-semibold tracking-wide ${isActive ? 'font-bold' : ''}`}>
-                      {tab.label}
-                    </span>
-                  </button>
-                );
-              })}
+          <div className="fixed bottom-0 left-0 right-0 z-50 p-2 sm:p-4 pb-4 sm:pb-6 pointer-events-none">
+            <div className="max-w-md mx-auto pointer-events-auto">
+              <div className="bg-slate-900/95 backdrop-blur-xl border border-slate-700/50 rounded-2xl flex items-center justify-between px-2 py-2 shadow-2xl shadow-indigo-900/20">
+                {bottomNav.map((tab) => {
+                  const Icon = tab.icon;
+                  const isActive = activeTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id as ActiveTabSimulator)}
+                      className={`flex flex-col items-center gap-1 p-2 rounded-xl transition-all min-w-[64px] ${
+                        isActive
+                          ? 'text-indigo-400'
+                          : 'text-slate-500 hover:text-slate-300'
+                      }`}
+                    >
+                      <div className={`p-1.5 rounded-xl transition-all ${isActive ? 'bg-indigo-600/20' : 'bg-transparent'}`}>
+                        <Icon className={`w-5 h-5 ${isActive ? 'scale-110 drop-shadow-md' : 'scale-100'}`} />
+                      </div>
+                      <span className={`text-[9px] font-semibold tracking-wide ${isActive ? 'font-bold' : ''}`}>
+                        {tab.label}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
-
-          {/* Smartphone Home Bar if frame active */}
-          {showDeviceFrame && (
-            <div className="py-2 flex justify-center">
-              <div className="w-28 h-1 bg-slate-700 rounded-full" />
-            </div>
-          )}
 
         </div>
       </div>

@@ -5,7 +5,7 @@ import { onAuthStateChanged, User } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { LoginScreen } from './components/LoginScreen';
 import { Header } from './components/Header';
-import { MobileSimulatorView } from './components/MobileSimulatorView';
+import { MainAppView } from './components/MainAppView';
 import { ArchitectureDocView } from './components/ArchitectureDocView';
 import { useMT5Connection } from './hooks/useMT5Connection';
 import { ReconnectionToast } from './components/ReconnectionToast';
@@ -75,29 +75,20 @@ export default function App() {
   // Closed MT5 Trades History
   const [closedTrades, setClosedTrades] = useState<ClosedTrade[]>([]);
 
-  // ML Model Stats
+  // ML Model Stats (Empty/Loading state initially)
   const [mlStats, setMlStats] = useState<MLModelStats>({
     modelName: 'XGBoost_LSTM_Ensemble_v2.4',
     architecture: 'XGBoost + LSTM Ensemble',
-    accuracy: 68.4,
-    f1Score: 0.72,
-    inferenceTimeMs: 2.4,
-    lastRetrained: '2026-07-20 04:00',
+    accuracy: 0.0,
+    f1Score: 0.0,
+    inferenceTimeMs: 0.0,
+    lastRetrained: '-',
     featuresCount: 38,
     currentSignal: {
-      symbol: 'EURUSD',
-      direction: 'BUY',
-      confidence: 84.5,
-      features: [
-        { name: 'RSI Bullish Divergence', impact: 0.35 },
-        { name: 'Order Book Imbalance', impact: 0.29 },
-        { name: 'ATR Volatility Ratio', impact: 0.25 },
-        { name: 'LSTM Sequence Pattern', impact: 0.22 },
-        { name: 'News Sentiment NLP', impact: 0.18 },
-        { name: 'MACD Histogram Momentum', impact: 0.15 },
-        { name: 'Bollinger %B Compression', impact: 0.11 },
-        { name: 'EMA(200) Trend Distance', impact: 0.08 }
-      ]
+      symbol: '-',
+      direction: 'NEUTRAL',
+      confidence: 0,
+      features: []
     }
   });
 
@@ -269,20 +260,7 @@ export default function App() {
     }
   }, [riskConfig, user, authLoading]);
 
-  // Periodic heartbeat simulation
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setAccountState(prev => {
-        const jitter = (Math.random() * 2 - 1);
-        return {
-          ...prev,
-          pingMs: Math.max(8, Math.floor(14 + jitter))
-        };
-      });
-    }, 4000);
-
-    return () => clearInterval(interval);
-  }, []);
+  // Removed fake periodic heartbeat simulation in production mode
 
   if (authLoading) return <div className="min-h-screen bg-slate-950 flex items-center justify-center"><div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div></div>;
   if (!user) return <LoginScreen />;
@@ -309,7 +287,7 @@ export default function App() {
       {/* Main View Area */}
       <main className="pb-12">
         {viewMode === 'simulator' ? (
-          <MobileSimulatorView
+          <MainAppView
             accountState={accountState}
             setAccountState={setAccountState}
             positions={positions}
