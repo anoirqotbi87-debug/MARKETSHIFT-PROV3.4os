@@ -105,9 +105,25 @@ export function useMT5Connection(
     const fetchMetaApi = async () => {
       if (!riskConfig?.metaApiToken || !riskConfig?.metaApiAccountId) return;
       try {
-        const res = await fetch(`https://mt-client-api-v1.agiliumtrade.agiliumtrade.ai/users/current/accounts/${riskConfig.metaApiAccountId}/account-information`, {
+        // Step 1: Get the account region from the provisioning API
+        const provRes = await fetch(`https://mt-provisioning-api-v1.agiliumtrade.agiliumtrade.ai/users/current/accounts/${riskConfig.metaApiAccountId}`, {
           headers: { 'auth-token': riskConfig.metaApiToken }
         });
+        
+        if (!provRes.ok) {
+          const errText = await provRes.text();
+          if (onLogAdd) onLogAdd(`Erreur MetaApi Provisioning (${provRes.status}): ${errText.substring(0, 50)}`, 'ERROR');
+          return;
+        }
+        
+        const provData = await provRes.json();
+        const region = provData.region || 'new-york'; // fallback if not present
+        
+        // Step 2: Fetch account information from the region-specific client API
+        const res = await fetch(`https://mt-client-api-v1.${region}.agiliumtrade.ai/users/current/accounts/${riskConfig.metaApiAccountId}/account-information`, {
+          headers: { 'auth-token': riskConfig.metaApiToken }
+        });
+        
         if (res.ok) {
           const data = await res.json();
           setAccountState(prev => ({
@@ -122,9 +138,15 @@ export function useMT5Connection(
             accountNumber: data.login?.toString() || prev.accountNumber,
             isConnected: true
           }));
+          if (onLogAdd && !interval) onLogAdd(`Données MetaApi synchronisées avec succès (${region}).`, 'SUCCESS');
+        } else {
+          const errText = await res.text();
+          console.error("MetaApi HTTP Error:", res.status, errText);
+          if (onLogAdd) onLogAdd(`Erreur MetaApi Client (${res.status}): ${errText.substring(0, 50)}`, 'ERROR');
         }
-      } catch (e) {
-         console.error("MetaApi Error:", e);
+      } catch (e: any) {
+         console.error("MetaApi Fetch Error:", e);
+         if (onLogAdd) onLogAdd(`Échec de connexion MetaApi: ${e.message}`, 'ERROR');
       }
     };
 

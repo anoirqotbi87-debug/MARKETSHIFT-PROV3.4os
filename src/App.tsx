@@ -207,19 +207,27 @@ export default function App() {
   });
 
   // Risk Configuration
-  const [riskConfig, setRiskConfig] = useState<RiskConfig>({
-    maxRiskPerTradePct: 1.0,
-    maxDailyLossPct: 3.0,
-    maxTotalDrawdownPct: 8.0,
-    maxOpenPositions: 3,
-    atrMultiplierSL: 1.8,
-    atrMultiplierTP: 3.2,
-    useTrailingStop: true,
-    trailingStopAtr: 1.5,
-    useKellyCriterion: true,
-    circuitBreakerActive: false,
-    enableNewsSentimentFilter: true,
-    minNewsSentimentScore: -0.60
+  const [riskConfig, setRiskConfig] = useState<RiskConfig>(() => {
+    try {
+      const saved = localStorage.getItem('marketshift_risk_config');
+      if (saved) return JSON.parse(saved);
+    } catch {
+      // fallback
+    }
+    return {
+      maxRiskPerTradePct: 1.0,
+      maxDailyLossPct: 3.0,
+      maxTotalDrawdownPct: 8.0,
+      maxOpenPositions: 3,
+      atrMultiplierSL: 1.8,
+      atrMultiplierTP: 3.2,
+      useTrailingStop: true,
+      trailingStopAtr: 1.5,
+      useKellyCriterion: true,
+      circuitBreakerActive: false,
+      enableNewsSentimentFilter: true,
+      minNewsSentimentScore: -0.60
+    };
   });
 
   // Log Entries Stream
@@ -372,6 +380,12 @@ export default function App() {
 
   // Save risk config to firestore when it changes (debounce could be added, but simplistic for now)
   useEffect(() => {
+    try {
+      localStorage.setItem('marketshift_risk_config', JSON.stringify(riskConfig));
+    } catch (e) {
+      console.error('Failed to save riskConfig locally', e);
+    }
+
     if (isMockConfig || !db) return;
     
     if (user && !authLoading) {
