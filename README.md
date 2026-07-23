@@ -18,3 +18,6 @@ View your app in AI Studio: https://ai.studio/apps/3a7de78b-3af2-414a-b850-2dbb2
 2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
 3. Run the app:
    `npm run dev`
+
+## Local Bridge Architecture
+MarketShift Pro supporte désormais une connexion locale directe via un bridge Python FastAPI vers MetaTrader 5, éliminant le besoin d'abonnement cloud (MetaApi). Consultez [BRIDGE_SETUP.md](./BRIDGE_SETUP.md) pour les instructions.

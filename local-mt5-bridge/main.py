@@ -4,7 +4,12 @@ import MetaTrader5 as mt5
 from pydantic import BaseModel
 import logging
 
+from ml_engine import MLEngine
+
 app = FastAPI(title="Local MT5 Bridge for MarketShift Pro")
+
+# Global ML Engine Instance
+ml_engine = MLEngine()
 
 # Allow CORS for the React mobile app
 app.add_middleware(
@@ -22,6 +27,9 @@ def startup_event():
         logging.error(f"initialize() failed, error code = {mt5.last_error()}")
         raise Exception("Failed to connect to MetaTrader 5 terminal. Is MT5 open?")
     logging.info("Connected to MetaTrader 5!")
+    
+    # Start ML Engine background training
+    ml_engine.start_background_training()
 
 @app.on_event("shutdown")
 def shutdown_event():
@@ -68,6 +76,15 @@ def get_positions():
             "openTime": pos.time,
         })
     return formatted_positions
+
+@app.get("/predict")
+def predict_signal(symbol: str = "EURUSD"):
+    try:
+        result = ml_engine.predict(symbol)
+        return result
+    except Exception as e:
+        logging.error(f"Prediction error for {symbol}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/ping")
 def ping():

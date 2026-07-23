@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, Dispatch, SetStateAction } from 'react';
-import { MT5AccountState, ReconnectionState } from '../types';
+import { MT5AccountState, ReconnectionState, MLModelStats } from '../types';
 
 interface UseMT5ConnectionOptions {
   baseDelayMs?: number;
@@ -12,6 +12,7 @@ export function useMT5Connection(
   accountState: MT5AccountState,
   setAccountState: Dispatch<SetStateAction<MT5AccountState>>,
   riskConfig: any,
+  setMlStats: Dispatch<SetStateAction<MLModelStats>>,
   options: UseMT5ConnectionOptions = {}
 ) {
   const {
@@ -191,7 +192,37 @@ export function useMT5Connection(
             accountNumber: data.login?.toString() || prev.accountNumber,
             isConnected: true
           }));
+          
           if (onLogAdd && !interval) onLogAdd(`Connecté au Local Bridge MT5 avec succès.`, 'SUCCESS');
+          
+          // --- AI ML Prediction Fetch ---
+          try {
+            const mlStart = performance.now();
+            const predRes = await fetch(`${ip}/predict?symbol=EURUSD`);
+            if (predRes.ok) {
+              const predData = await predRes.json();
+              const mlEnd = performance.now();
+              setMlStats(prev => ({
+                ...prev,
+                inferenceTimeMs: Number((mlEnd - mlStart).toFixed(1)),
+                lastRetrained: new Date().toLocaleTimeString(),
+                currentSignal: {
+                  ...prev.currentSignal,
+                  symbol: 'EURUSD',
+                  direction: predData.signal,
+                  confidence: predData.confidence,
+                  features: [
+                    { name: predData.reason || 'Analyse Technique MT5', impact: 0.40 },
+                    ...prev.currentSignal.features.slice(0, 5)
+                  ]
+                }
+              }));
+            }
+          } catch (e) {
+            console.error("ML Predict Error:", e);
+          }
+          // ------------------------------
+          
         } else {
           const errText = await res.text();
           if (onLogAdd) onLogAdd(`Erreur Local Bridge (${res.status}): ${errText.substring(0, 50)}`, 'ERROR');

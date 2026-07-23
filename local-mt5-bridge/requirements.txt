@@ -2,3 +2,9 @@ fastapi
 uvicorn
 MetaTrader5
 pydantic
+
+pandas
+numpy
+xgboost
+scikit-learn
+ta
